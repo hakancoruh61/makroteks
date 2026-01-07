@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAKROTEKS Maliyet Hesaplama v3.1</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <style>
+        :root { --primary: #20c997; --dark: #2c3e50; --danger: #e74c3c; --warning: #f39c12; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--dark); border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .kur-box { background: #e3f2fd; padding: 10px 20px; border-radius: 8px; border: 1px solid #90caf9; font-weight: bold; }
+        .section { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px; }
+        .section-title { font-weight: bold; margin-bottom: 15px; color: var(--dark); display: flex; justify-content: space-between; }
+        .iplik-row { display: grid; grid-template-columns: 2fr 1fr 1fr 40px; gap: 10px; margin-bottom: 10px; align-items: end; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        label { font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block; color: #666; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; }
+        .btn-add-iplik { background: var(--dark); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-remove { background: var(--danger); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; }
+        .results { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .result-card { padding: 20px; border-radius: 10px; text-align: center; color: white; }
+        .ham-card { background: #34495e; }
+        .boyali-card { background: #27ae60; }
+        .price-big { font-size: 32px; font-weight: bold; margin: 10px 0; }
+        .tl-price { font-size: 16px; opacity: 0.9; }
+        .action-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-main { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .btn-save { background: var(--primary); }
+        .btn-clear { background: #6c757d; }
+        .btn-update { background: var(--warning); display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; font-size: 13px; }
+        th { background: var(--dark); color: white; }
+        .edit-row-btn { background: none; border: none; color: var(--warning); cursor: pointer; font-size: 18px; }
+        .delete-row-btn { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px; }
+        .error-msg { color: var(--danger); font-size: 12px; font-weight: bold; margin-top: 5px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-flex">
+        <button onclick="window.location.href='MAKROTEKS KUMAŞÇILIK.html'" style="padding: 8px 15px; cursor: pointer;">← Geri</button>
+        <div class="kur-box" id="kurAlani">Dolar Kuru: Yükleniyor...</div>
+    </div>
+
+    <h2>KUMAŞ MALİYET ANALİZİ ($)</h2>
+
+    <div class="section" id="formAlan">
+        <div class="grid" style="margin-bottom: 15px;">
+            <div><label>TARİH</label><input type="date" id="m_tarih"></div>
+            <div><label>KUMAŞ ADI</label><input type="text" id="m_kumas" placeholder="Kumaş Kalitesini Yazın"></div>
+        </div>
+        <div class="section-title">
+            <span>İPLİK KARIŞIMI VE ORANLARI</span>
+            <button class="btn-add-iplik" onclick="iplikSatiriEkle()">+ İplik Ekle</button>
+        </div>
+        <div id="iplikKonteyner"></div>
+        <div id="oranHata" class="error-msg">⚠ Toplam oran %100 olmalıdır!</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">ÜRETİM VE DİĞER GİDERLER ($)</div>
+        <div class="grid">
+            <div><label>ÖRGÜ ÜCRETİ ($)</label><input type="number" id="orguDolar" step="0.01" placeholder="0.00" oninput="hesapla()"></div>
+            <div><label>BOYA ÜCRETİ ($)</label><input type="number" id="boyaDolar" step="0.01" placeholder="0.00" oninput="hesapla()"></div>
+            <div><label>HAM FİRE (%)</label><input type="number" id="hamFire" placeholder="0" oninput="hesapla()"></div>
+            <div><label>BOYA FİRESİ (%)</label><input type="number" id="boyaFire" placeholder="0" oninput="hesapla()"></div>
+            <div><label>GENEL GİDER ($)</label><input type="number" id="genelGider" step="0.01" placeholder="0.00" oninput="hesapla()"></div>
+        </div>
+    </div>
+
+    <div class="results">
+        <div class="result-card ham-card">
+            <h3>HAM MALİYET</h3>
+            <div class="price-big" id="hamDolar">0.00 $</div>
+            <div class="tl-price" id="hamTL">0.00 ₺</div>
+        </div>
+        <div class="result-card boyali-card">
+            <h3>BOYALI MALİYET</h3>
+            <div class="price-big" id="boyaliDolar">0.00 $</div>
+            <div class="tl-price" id="boyaliTL">0.00 ₺</div>
+        </div>
+    </div>
+
+    <div class="action-btns">
+        <input type="hidden" id="editId">
+        <button id="btnSave" class="btn-main btn-save" onclick="kaydet()">HESAPLAMAYI KAYDET</button>
+        <button id="btnUpdate" class="btn-main btn-update" onclick="guncelleOnay()">GÜNCELLEMEYİ KAYDET</button>
+        <button class="btn-main btn-clear" onclick="temizle()">TEMİZLE / YENİ</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Tarih</th><th>Kumaş Adı</th><th>İplikler</th><th>Ham ($)</th><th>Boyalı ($)</th><th>İşlem</th>
+            </tr>
+        </thead>
+        <tbody id="maliyetBody"></tbody>
+    </table>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAeFLhVyrv4sn4kJmUtusLIOPWwgmKxe5c",
+        authDomain: "kumastakip-6930a.firebaseapp.com",
+        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
+        projectId: "kumastakip-6930a",
+        storageBucket: "kumastakip-6930a.firebasestorage.app",
+        messagingSenderId: "796676836408",
+        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const maliyetRef = db.ref('kumas_maliyetleri');
+    let guncelKur = 0;
+
+    async function kurGetir() {
+        try {
+            const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+            const data = await response.json();
+            guncelKur = data.rates.TRY;
+            document.getElementById('kurAlani').innerText = `TCMB Dolar Kuru: ${guncelKur.toFixed(4)} ₺`;
+            hesapla();
+        } catch (error) {
+            guncelKur = 30.00;
+            document.getElementById('kurAlani').innerText = "Kur: 30.00 ₺ (Hata)";
+        }
+    }
+
+    function iplikSatiriEkle(cinsi = "", fiyat = "", oran = "") {
+        const div = document.createElement('div');
+        div.className = 'iplik-row';
+        div.innerHTML = `
+            <div><label>İplik Cinsi</label><input type="text" class="ip-cinsi" placeholder="Pamuk" value="${cinsi}"></div>
+            <div><label>Fiyat ($)</label><input type="number" class="ip-fiyat" step="0.01" placeholder="0.00" value="${fiyat}" oninput="hesapla()"></div>
+            <div><label>Oran (%)</label><input type="number" class="ip-oran" placeholder="0" value="${oran}" oninput="hesapla()"></div>
+            <button class="btn-remove" onclick="this.parentElement.remove(); hesapla();">✕</button>
+        `;
+        document.getElementById('iplikKonteyner').appendChild(div);
+        hesapla();
+    }
+
+    function hesapla() {
+        let toplamIplikMaliyeti = 0;
+        let toplamOran = 0;
+        const iplikSatirlari = document.querySelectorAll('.iplik-row');
+        
+        iplikSatirlari.forEach(row => {
+            const fiyat = parseFloat(row.querySelector('.ip-fiyat').value) || 0;
+            const oran = parseFloat(row.querySelector('.ip-oran').value) || 0;
+            toplamIplikMaliyeti += (fiyat * oran) / 100;
+            toplamOran += oran;
+        });
+
+        document.getElementById('oranHata').style.display = (toplamOran !== 100 && toplamOran !== 0) ? "block" : "none";
+
+        const orgu = parseFloat(document.getElementById('orguDolar').value) || 0;
+        const boya = parseFloat(document.getElementById('boyaDolar').value) || 0;
+        const hFire = parseFloat(document.getElementById('hamFire').value) || 0;
+        const bFire = parseFloat(document.getElementById('boyaFire').value) || 0;
+        const genel = parseFloat(document.getElementById('genelGider').value) || 0;
+
+        const hamMaliyet = (toplamIplikMaliyeti / (1 - (hFire / 100))) + orgu;
+        const boyaliMaliyet = ((hamMaliyet + boya + genel) / (1 - (bFire / 100)));
+
+        document.getElementById('hamDolar').innerText = hamMaliyet.toFixed(2) + " $";
+        document.getElementById('hamTL').innerText = (hamMaliyet * guncelKur).toFixed(2) + " ₺";
+        document.getElementById('boyaliDolar').innerText = boyaliMaliyet.toFixed(2) + " $";
+        document.getElementById('boyaliTL').innerText = (boyaliMaliyet * guncelKur).toFixed(2) + " ₺";
+
+        return { hamMaliyet, boyaliMaliyet };
+    }
+
+    function formVerileriniAl() {
+        const iplikVerileri = [];
+        document.querySelectorAll('.iplik-row').forEach(row => {
+            iplikVerileri.push({
+                cinsi: row.querySelector('.ip-cinsi').value,
+                fiyat: row.querySelector('.ip-fiyat').value,
+                oran: row.querySelector('.ip-oran').value
+            });
+        });
+
+        const res = hesapla();
+        const t = document.getElementById('m_tarih').value;
+        const d = new Date(t);
+        
+        return {
+            rawDate: t,
+            tarih: `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`,
+            kumas: document.getElementById('m_kumas').value,
+            iplikler: iplikVerileri,
+            orgu: document.getElementById('orguDolar').value,
+            boya: document.getElementById('boyaDolar').value,
+            hFire: document.getElementById('hamFire').value,
+            bFire: document.getElementById('boyaFire').value,
+            genel: document.getElementById('genelGider').value,
+            hamSonuc: res.hamMaliyet.toFixed(2),
+            boyaliSonuc: res.boyaliMaliyet.toFixed(2)
+        };
+    }
+
+    function kaydet() {
+        const veri = formVerileriniAl();
+        if(!veri.kumas || !veri.rawDate) return alert("Tarih ve Kumaş Adı zorunludur!");
+        maliyetRef.push(veri).then(() => temizle());
+    }
+
+    function temizle() {
+        document.getElementById('m_tarih').value = new Date().toISOString().split('T')[0];
+        document.getElementById('m_kumas').value = "";
+        document.getElementById('orguDolar').value = "";
+        document.getElementById('boyaDolar').value = "";
+        document.getElementById('hamFire').value = "";
+        document.getElementById('boyaFire').value = "";
+        document.getElementById('genelGider').value = "";
+        document.getElementById('editId').value = "";
+        document.getElementById('iplikKonteyner').innerHTML = "";
+        iplikSatiriEkle("", "", ""); // İlk iplik satırı da boş gelsin
+        document.getElementById('btnSave').style.display = "block";
+        document.getElementById('btnUpdate').style.display = "none";
+        hesapla();
+    }
+
+    function duzenleModu(id, veri) {
+        document.getElementById('editId').value = id;
+        document.getElementById('m_tarih').value = veri.rawDate;
+        document.getElementById('m_kumas').value = veri.kumas;
+        document.getElementById('orguDolar').value = veri.orgu;
+        document.getElementById('boyaDolar').value = veri.boya;
+        document.getElementById('hamFire').value = veri.hFire;
+        document.getElementById('boyaFire').value = veri.bFire;
+        document.getElementById('genelGider').value = veri.genel;
+        document.getElementById('iplikKonteyner').innerHTML = "";
+        veri.iplikler.forEach(ip => iplikSatiriEkle(ip.cinsi, ip.fiyat, ip.oran));
+        document.getElementById('btnSave').style.display = "none";
+        document.getElementById('btnUpdate').style.display = "block";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function guncelleOnay() {
+        const id = document.getElementById('editId').value;
+        maliyetRef.child(id).update(formVerileriniAl()).then(() => temizle());
+    }
+
+    function sil(id) {
+        if(confirm("Bu kaydı silmek istiyor musunuz?")) maliyetRef.child(id).remove();
+    }
+
+    maliyetRef.on('value', snap => {
+        const body = document.getElementById('maliyetBody');
+        body.innerHTML = "";
+        let liste = [];
+        snap.forEach(child => { liste.push({ id: child.key, ...child.val() }); });
+        liste.sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
+        liste.forEach(item => {
+            const ipOzet = item.iplikler.map(i => `<span style="background:#eee; padding:2px 5px; border-radius:3px; margin-right:3px;">%${i.oran} ${i.cinsi}</span>`).join("");
+            body.innerHTML += `<tr><td>${item.tarih}</td><td><strong>${item.kumas}</strong></td><td>${ipOzet}</td><td style="color:#e67e22; font-weight:bold">${item.hamSonuc} $</td><td style="color:var(--primary); font-weight:bold">${item.boyaliSonuc} $</td><td><button class="edit-row-btn" onclick='duzenleModu("${item.id}", ${JSON.stringify(item)})'>✏️</button> <button class="delete-row-btn" onclick="sil('${item.id}')">🗑️</button></td></tr>`;
+        });
+    });
+
+    window.onload = () => { kurGetir(); temizle(); };
+</script>
+</body>
+</html>

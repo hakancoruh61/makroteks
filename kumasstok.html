@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boyalı Kumaş Stok Takibi v5.1</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 10px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; text-align: center; margin-top: 0; margin-bottom: 15px; font-size: 1.4rem; }
+        
+        /* Form Alanı */
+        .form-group { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e0e0e0; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; flex: 1; min-width: 130px; }
+        
+        /* Butonlar */
+        button { padding: 8px 12px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        .btn-add { background-color: #28a745; color: white; }
+        .btn-update { background-color: #ffc107; color: #212529; padding: 5px 10px; font-size: 0.85em; }
+        .btn-delete { background-color: #dc3545; color: white; padding: 5px 10px; font-size: 0.85em; }
+        .btn-print { background-color: #17a2b8; color: white; padding: 8px 15px; }
+        .btn-qty { background-color: #6c757d; color: white; padding: 2px 8px; font-weight: bold; }
+        
+        /* Filtre ve Üst Menü */
+        .filter-section { background: #e9ecef; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.9em; }
+        
+        /* Tablo Yapısı */
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9em; }
+        th { background-color: #1a73e8; color: white; }
+        
+        /* Zebra Desenli Kumaş Başlıkları */
+        .kumas-row { cursor: pointer; font-weight: bold; color: #1a73e8; }
+        .kumas-row.row-even { background-color: #ffffff; } /* Beyaz */
+        .kumas-row.row-odd { background-color: #e3f2fd; }  /* Açık Mavi */
+        .kumas-row:hover { background-color: #bbdefb !important; }
+        
+        /* Alt Renk Detayları */
+        .renk-row { display: none; background-color: #fafafa; }
+        .renk-row.active { display: table-row; }
+        .renk-row:hover { background-color: #f1f1f1; }
+        
+        .qty-controls { display: flex; align-items: center; gap: 8px; }
+        .empty-msg { text-align: center; color: #6c757d; padding: 20px; }
+        .total-row { background-color: #2c3e50; color: white; font-weight: bold; font-size: 0.95em; }
+        .chevron { display: inline-block; margin-right: 10px; transition: transform 0.3s; }
+        .active-chevron { transform: rotate(90deg); }
+
+        @media print {
+            .form-group, .filter-section, .btn-update, .btn-delete, .btn-qty, th:last-child, td:last-child { display: none !important; }
+            .renk-row { display: table-row !important; }
+            .kumas-row { background-color: #f0f0f0 !important; color: black !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Boyalı Kumaş Stok Takibi <small>v5.1</small></h2>
+
+    <div class="form-group">
+        <input type="hidden" id="editId">
+        <input type="text" id="kumasAdi" placeholder="Kumaş Adı">
+        <input type="text" id="kumasRengi" placeholder="Kumaş Rengi">
+        <input type="number" id="kapAdeti" placeholder="Kap Adeti">
+        <button id="mainBtn" class="btn-add" onclick="stokEkleVeyaGuncelle()">Ekle</button>
+        <button id="cancelBtn" style="display:none; background-color:#bbb;" onclick="formuSifirla()">İptal</button>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-controls">
+            <strong>🔍 Ara:</strong>
+            <input type="text" id="aramaInput" placeholder="Kumaş adı yazın..." onkeyup="stoklariListele()">
+        </div>
+        <button class="btn-print" onclick="window.print()">🖨️ Yazdır</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Kumaş / Renk</th>
+                <th>Kap</th>
+                <th style="text-align: center;">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody id="stokListesi"></tbody>
+        <tfoot id="toplamAlani"></tfoot>
+    </table>
+    <div id="bosMesaj" class="empty-msg">Yükleniyor...</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+<script>
+    // Firebase Config (Kendi ayarlarınız)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAeFLhVyrv4sn4k JmUtusLIOPWwgmKxe5c",
+        authDomain: "kumastakip-6930a.firebaseapp.com",
+        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
+        projectId: "kumastakip-6930a",
+        storageBucket: "kumastakip-6930a.firebasestorage.app",
+        messagingSenderId: "796676836408",
+        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const stokRef = db.ref('stoklar');
+
+    let stoklar = [];
+    let acikKumaslar = new Set();
+
+    stokRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        stoklar = [];
+        if (data) {
+            Object.keys(data).forEach(id => {
+                stoklar.push({ id: id, ...data[id] });
+            });
+        }
+        stoklariListele();
+    });
+
+    function stokEkleVeyaGuncelle() {
+        const id = document.getElementById('editId').value;
+        const ad = document.getElementById('kumasAdi').value.trim();
+        const renk = document.getElementById('kumasRengi').value.trim();
+        const adet = parseInt(document.getElementById('kapAdeti').value);
+        if (!ad || !renk || isNaN(adet)) { alert("Lütfen tüm alanları doldurun!"); return; }
+        const veri = { ad, renk, adet };
+        if (id) { db.ref('stoklar/' + id).update(veri); } else { stokRef.push(veri); }
+        formuSifirla();
+    }
+
+    function miktarDegistir(id, miktar) {
+        const s = stoklar.find(x => x.id === id);
+        const yeniAdet = Math.max(0, parseInt(s.adet) + miktar);
+        db.ref('stoklar/' + id).update({ adet: yeniAdet });
+    }
+
+    function duzenle(id) {
+        const s = stoklar.find(x => x.id === id);
+        document.getElementById('editId').value = s.id;
+        document.getElementById('kumasAdi').value = s.ad;
+        document.getElementById('kumasRengi').value = s.renk;
+        document.getElementById('kapAdeti').value = s.adet;
+        document.getElementById('mainBtn').textContent = "Güncelle";
+        document.getElementById('mainBtn').className = "btn-update";
+        document.getElementById('cancelBtn').style.display = "inline-block";
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function formuSifirla() {
+        document.getElementById('editId').value = '';
+        document.getElementById('kumasAdi').value = '';
+        document.getElementById('kumasRengi').value = '';
+        document.getElementById('kapAdeti').value = '';
+        document.getElementById('mainBtn').textContent = "Ekle";
+        document.getElementById('mainBtn').className = "btn-add";
+        document.getElementById('cancelBtn').style.display = "none";
+    }
+
+    function stokSil(id) {
+        if(confirm('Seçilen renk kaydı tamamen silinecek. Onaylıyor musunuz?')) { db.ref('stoklar/' + id).remove(); }
+    }
+
+    function toggleKumas(kumasAdi) {
+        if (acikKumaslar.has(kumasAdi)) {
+            acikKumaslar.delete(kumasAdi);
+        } else {
+            acikKumaslar.add(kumasAdi);
+        }
+        stoklariListele();
+    }
+
+    function stoklariListele() {
+        const liste = document.getElementById('stokListesi');
+        const toplamAlani = document.getElementById('toplamAlani');
+        const aramaDegeri = document.getElementById('aramaInput').value.toLowerCase();
+        
+        liste.innerHTML = '';
+        let genelToplamKap = 0;
+
+        // Kumaşa göre gruplandır
+        const gruplanmis = stoklar.reduce((acc, obj) => {
+            const key = obj.ad;
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(obj);
+            return acc;
+        }, {});
+
+        const kumasIsimleri = Object.keys(gruplanmis).sort((a, b) => a.localeCompare(b, 'tr'));
+
+        let satirSayaci = 0; // Zebra renkleri için sayaç
+        kumasIsimleri.forEach(kumas => {
+            if (aramaDegeri && !kumas.toLowerCase().includes(aramaDegeri)) return;
+
+            const renkler = gruplanmis[kumas].sort((a, b) => a.renk.localeCompare(b.renk, 'tr'));
+            const kumasToplam = renkler.reduce((sum, item) => sum + parseInt(item.adet), 0);
+            genelToplamKap += kumasToplam;
+
+            const isOpen = acikKumaslar.has(kumas) || aramaDegeri !== "";
+            const chevronClass = isOpen ? 'active-chevron' : '';
+            const zebraClass = (satirSayaci % 2 === 0) ? 'row-even' : 'row-odd';
+            satirSayaci++;
+
+            // Kumaş Başlığı
+            liste.innerHTML += `
+                <tr class="kumas-row ${zebraClass}" onclick="toggleKumas('${kumas}')">
+                    <td><span class="chevron ${chevronClass}">▶</span> ${kumas.toUpperCase()} <small>(${renkler.length} Renk)</small></td>
+                    <td>${kumasToplam} Kap</td>
+                    <td style="text-align:center; font-size:0.8em; color:#667;">${isOpen ? 'Kapat' : 'Detayları Gör'}</td>
+                </tr>`;
+
+            // Renkler
+            renkler.forEach(s => {
+                liste.innerHTML += `
+                    <tr class="renk-row ${isOpen ? 'active' : ''}">
+                        <td style="padding-left: 35px; color: #555;">↳ ${s.renk}</td>
+                        <td>
+                            <div class="qty-controls">
+                                <button class="btn-qty" onclick="event.stopPropagation(); miktarDegistir('${s.id}', -1)">-</button>
+                                <span style="min-width:30px; text-align:center; font-weight:bold;">${s.adet}</span>
+                                <button class="btn-qty" onclick="event.stopPropagation(); miktarDegistir('${s.id}', 1)">+</button>
+                            </div>
+                        </td>
+                        <td style="text-align:center;">
+                            <button class="btn-update" onclick="event.stopPropagation(); duzenle('${s.id}')">Düzen</button>
+                            <button class="btn-delete" onclick="event.stopPropagation(); stokSil('${s.id}')">Sil</button>
+                        </td>
+                    </tr>`;
+            });
+        });
+
+        if (stoklar.length > 0) {
+            toplamAlani.innerHTML = `
+                <tr class="total-row">
+                    <td>GENEL TOPLAM</td>
+                    <td>${genelToplamKap} Kap</td>
+                    <td></td>
+                </tr>`;
+        } else {
+            toplamAlani.innerHTML = '';
+        }
+        document.getElementById('bosMesaj').style.display = (satirSayaci > 0) ? 'none' : 'block';
+    }
+</script>
+</body>
+</html>

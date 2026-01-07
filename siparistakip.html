@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAKROTEKS Sipariş Takip v10.3</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
+    <style>
+        :root { --primary: #1a73e8; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --info: #17a2b8; --dark: #1e293b; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 20px; }
+        .container { max-width: 1600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        #connStatus { padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; float: right; }
+        .online { background: #d4edda; color: #155724; }
+        .offline { background: #f8d7da; color: #721c24; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; clear: both; }
+        input, select, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 100%; box-sizing: border-box; }
+        
+        button { padding: 8px 10px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; display: inline-flex; align-items: center; gap: 5px; justify-content: center; font-size: 11px; }
+        .btn-add { background: var(--success); color: white; font-size: 14px; }
+        .btn-status-action { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
+        .btn-status-complete { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+        .btn-sevk { background: #673ab7; color: white; }
+        .btn-edit { background: var(--warning); color: #333; }
+        .btn-note { background: var(--info); color: white; }
+        .btn-report { background: var(--dark); color: white; }
+        .btn-del { background: var(--danger); color: white; }
+
+        .filter-container { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid #ddd; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: var(--dark); color: white; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
+        
+        /* GÜNCELLENEN KUTUCUK STİLLERİ */
+        .badge-kilo { padding: 6px 10px; border-radius: 4px; color: white; font-weight: normal; display: inline-block; min-width: 80px; text-align: center; }
+        .siparis-kilo-ozel { background-color: var(--success); } /* Yeşil Kutu */
+        .sevk-kilo-ozel { background-color: var(--primary); }    /* Mavi Kutu */
+        .kalan-pozitif { background-color: var(--danger); }     /* Kırmızı Kutu */
+        .kalan-sifir { background-color: #6c757d; }              /* Bitenler için Gri Kutu */
+
+        .status-badge { padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .beklemede { background: #fff3cd; color: #856404; }
+        .üretiliyor { background: #cce5ff; color: #004085; }
+        .bitti { background: #d4edda; color: #155724; }
+
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 10px; box-shadow: 0 0 50px rgba(0,0,0,0.5); z-index: 1000; width: 450px; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+        
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="connStatus" class="offline">BAĞLANILIYOR...</div>
+    <h2 style="text-align: center; color: var(--primary); margin-bottom: 25px;">🧵 MAKROTEKS SİPARİŞ TAKİP PANELİ</h2>
+
+    <div class="form-grid no-print">
+        <input type="text" id="inpFirma" placeholder="Firma Adı">
+        <input type="text" id="inpKumas" placeholder="Kumaş Cinsi">
+        <input type="text" id="inpGramaj" placeholder="Gramaj">
+        <input type="number" id="inpMiktar" placeholder="Sipariş Toplam (KG)">
+        <button class="btn-add" onclick="ekle()">➕ SİPARİŞİ KAYDET</button>
+    </div>
+
+    <div class="filter-container no-print">
+        <label>🔍 LİSTELE:</label>
+        <select id="filtre" onchange="listele()" style="width: 250px;">
+            <option value="HEPSİ">TÜM SİPARİŞLER (Alfabetik)</option>
+            <option value="BEKLEMEDE">⏳ BEKLEYENLER</option>
+            <option value="ÜRETİLİYOR">⚙️ ÜRETİMDEKİLER</option>
+            <option value="BITTI">✅ BİTENLER</option>
+        </select>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Firma</th>
+                <th>Kumaş</th>
+                <th>Gramaj</th>
+                <th>Sipariş (KG)</th>
+                <th>Sevk Edilen (KG)</th>
+                <th>Kalan Sipariş (KG)</th>
+                <th>Durum</th>
+                <th class="no-print" style="text-align: center; width: 480px;">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody id="siparisTable"></tbody>
+    </table>
+</div>
+
+<div class="modal-overlay" id="overlay" onclick="modalKapat()"></div>
+<div class="modal" id="sevkModal">
+    <h3>📦 Sevkiyat Girişi</h3>
+    <p id="sevkBilgi" style="font-weight:bold; color:var(--primary);"></p>
+    <p id="mevcutSevkBilgi" style="font-size:12px; color:#666; margin-bottom:15px;"></p>
+    <label style="font-size:12px;">Yeni Sevk Edilen Miktarı Yazınız (KG):</label>
+    <input type="number" id="sevkMiktarInput" style="margin-top:10px; border: 2px solid #673ab7; font-size: 18px;" placeholder="0.00" step="0.01">
+    <button class="btn-sevk" onclick="sevkKaydet()" style="width:100%; margin-top:15px; padding:15px;">SEVKİYATI EKLE VE TOPLA</button>
+</div>
+
+<div class="modal" id="editModal">
+    <h3>✏️ Genel Bilgileri Güncelle</h3>
+    <label>Firma</label><input type="text" id="editFirma" style="margin-bottom:8px;">
+    <label>Kumaş</label><input type="text" id="editKumas" style="margin-bottom:8px;">
+    <label>Gramaj</label><input type="text" id="editGramaj" style="margin-bottom:8px;">
+    <label>Sipariş KG</label><input type="number" id="editMiktar" style="margin-bottom:20px;">
+    <button class="btn-add" onclick="guncelle()" style="width:100%">BİLGİLERİ KAYDET</button>
+</div>
+
+<div class="modal" id="notModal">
+    <h3>📋 Sipariş & Sevk Notları</h3>
+    <textarea id="notIcerik" style="height:150px; margin-bottom:15px;"></textarea>
+    <button class="btn-add" onclick="notKaydet()" style="width:100%">NOTU KAYDET</button>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAeFLhVyrv4sn4kJmUtusLIOPWwgmKxe5c", 
+        authDomain: "kumastakip-6930a.firebaseapp.com",
+        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
+        projectId: "kumastakip-6930a",
+        storageBucket: "kumastakip-6930a.firebasestorage.app",
+        messagingSenderId: "796676836408",
+        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const sRef = db.ref('makroteks_siparisler'); 
+
+    let tumSiparisler = [];
+    let aktifID = null;
+
+    db.ref(".info/connected").on("value", (snap) => {
+        const el = document.getElementById('connStatus');
+        if (snap.val() === true) { el.innerText = "● BULUT AKTİF"; el.className = "online"; }
+        else { el.innerText = "○ BAĞLANTI KESİLDİ"; el.className = "offline"; }
+    });
+
+    sRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        tumSiparisler = [];
+        if(data) {
+            Object.keys(data).forEach(id => {
+                let item = data[id];
+                if(!item.durum) item.durum = "BEKLEMEDE"; 
+                if(!item.sevk) item.sevk = 0;
+                tumSiparisler.push({id, ...item});
+            });
+        }
+        tumSiparisler.sort((a, b) => a.firma.localeCompare(b.firma, 'tr'));
+        listele();
+    });
+
+    function listele() {
+        const table = document.getElementById('siparisTable');
+        const filtre = document.getElementById('filtre').value;
+        table.innerHTML = "";
+
+        tumSiparisler.forEach(s => {
+            if(filtre !== "HEPSİ" && s.durum !== filtre) return;
+
+            const sipKG = parseFloat(s.miktar) || 0;
+            const sevkKG = parseFloat(s.sevk) || 0;
+            const kalanKG = sipKG - sevkKG;
+
+            table.innerHTML += `
+                <tr>
+                    <td><strong>${s.firma}</strong></td>
+                    <td>${s.kumas}</td>
+                    <td>${s.gramaj || '-'}</td>
+                    <td><span class="badge-kilo siparis-kilo-ozel">${sipKG.toFixed(2)} KG</span></td>
+                    <td><span class="badge-kilo sevk-kilo-ozel">${sevkKG.toFixed(2)} KG</span></td>
+                    <td><span class="badge-kilo ${kalanKG > 0 ? 'kalan-pozitif' : 'kalan-sifir'}">${kalanKG.toFixed(2)} KG</span></td>
+                    <td><span class="status-badge ${s.durum.toLowerCase()}">${s.durum}</span></td>
+                    <td class="no-print" style="text-align: right; display: flex; gap: 4px; justify-content: flex-end;">
+                        <button class="btn-status-action" onclick="durumDegistir('${s.id}', 'ÜRETİLİYOR')">⚙️ Üretim</button>
+                        <button class="btn-status-complete" onclick="durumDegistir('${s.id}', 'BITTI')">✅ BİTTİ</button>
+                        <button class="btn-sevk" onclick="sevkAc('${s.id}')">📦 Sevk Yap</button>
+                        <button class="btn-edit" onclick="duzenleAc('${s.id}')">✏️ Güncelle</button>
+                        <button class="btn-note" onclick="notAc('${s.id}')">📋 Not</button>
+                        <button class="btn-report" onclick="raporHazirla('${s.id}')">🖨️ Yazdır</button>
+                        <button class="btn-del" onclick="sil('${s.id}')">🗑️</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function sevkAc(id) {
+        aktifID = id;
+        const s = tumSiparisler.find(x => x.id === id);
+        document.getElementById('sevkBilgi').innerText = s.firma + " - " + s.kumas;
+        document.getElementById('mevcutSevkBilgi').innerText = "Toplam Sevk Edilen: " + (s.sevk || 0).toFixed(2) + " KG";
+        document.getElementById('sevkMiktarInput').value = "";
+        document.getElementById('sevkModal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+        setTimeout(() => document.getElementById('sevkMiktarInput').focus(), 100);
+    }
+
+    function sevkKaydet() {
+        const yeniGelen = parseFloat(document.getElementById('sevkMiktarInput').value) || 0;
+        if(yeniGelen <= 0) return alert("Lütfen miktar giriniz.");
+        const s = tumSiparisler.find(x => x.id === aktifID);
+        const toplamSevk = (parseFloat(s.sevk) || 0) + yeniGelen;
+        sRef.child(aktifID).update({ sevk: toplamSevk });
+        modalKapat();
+    }
+
+    function durumDegistir(id, yeniDurum) { sRef.child(id).update({ durum: yeniDurum }); }
+    
+    function ekle() {
+        const f = document.getElementById('inpFirma').value;
+        const k = document.getElementById('inpKumas').value;
+        const m = document.getElementById('inpMiktar').value;
+        if(!f || !k) return alert("Eksik bilgi!");
+        sRef.push({
+            firma: f, kumas: k,
+            gramaj: document.getElementById('inpGramaj').value,
+            miktar: parseFloat(m) || 0,
+            sevk: 0,
+            durum: "BEKLEMEDE",
+            not: ""
+        });
+        document.querySelectorAll('.form-grid input').forEach(i => i.value = "");
+    }
+
+    function duzenleAc(id) {
+        aktifID = id;
+        const s = tumSiparisler.find(x => x.id === id);
+        document.getElementById('editFirma').value = s.firma;
+        document.getElementById('editKumas').value = s.kumas;
+        document.getElementById('editGramaj').value = s.gramaj;
+        document.getElementById('editMiktar').value = s.miktar;
+        document.getElementById('editModal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function guncelle() {
+        sRef.child(aktifID).update({
+            firma: document.getElementById('editFirma').value,
+            kumas: document.getElementById('editKumas').value,
+            gramaj: document.getElementById('editGramaj').value,
+            miktar: parseFloat(document.getElementById('editMiktar').value) || 0
+        });
+        modalKapat();
+    }
+
+    function notAc(id) {
+        aktifID = id;
+        const s = tumSiparisler.find(x => x.id === id);
+        document.getElementById('notIcerik').value = s.not || "";
+        document.getElementById('notModal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function notKaydet() {
+        sRef.child(aktifID).update({ not: document.getElementById('notIcerik').value });
+        modalKapat();
+    }
+
+    function modalKapat() { document.querySelectorAll('.modal, .modal-overlay').forEach(m => m.style.display='none'); }
+    function sil(id) { if(confirm("Kaydı silmek istiyor musunuz?")) sRef.child(id).remove(); }
+
+    function raporHazirla(id) {
+        const s = tumSiparisler.find(x => x.id === id);
+        const tarih = new Date().toLocaleDateString('tr-TR');
+        const sip = parseFloat(s.miktar) || 0;
+        
+        const rWindow = window.open('', '', 'width=900,height=850');
+        
+        rWindow.document.write(`
+            <html><head><title>Örme Talimatı</title><style>
+                body { font-family: sans-serif; padding: 40px; color:#000; }
+                .h { border-bottom: 5px solid #000; padding-bottom: 10px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+                .r { display: flex; border-bottom: 1px solid #ccc; padding: 15px 0; font-size: 20px; }
+                .l { width: 250px; font-weight: bold; color: #333; }
+                .val { font-weight: normal; }
+                .buyuk-miktar { font-size: 28px; font-weight: 900; color: #000; margin-top: 10px; }
+                .n { margin-top: 40px; padding: 25px; background: #fff; border: 2px solid #000; border-radius: 10px; }
+                h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
+                @media print { body { padding: 0; } }
+            </style></head><body>
+                <div class="h"><h1>MAKROTEKS KUMAŞÇILIK ÖRME TALİMATI</h1> <span style="font-size:18px;">${tarih}</span></div>
+                
+                <div class="r"><div class="l">Firma:</div><div class="val">${s.firma}</div></div>
+                <div class="r"><div class="l">Kumaş Cinsi:</div><div class="val">${s.kumas}</div></div>
+                <div class="r"><div class="l">Gramaj:</div><div class="val">${s.gramaj || '-'}</div></div>
+                
+                <div style="margin-top: 30px;">
+                    <div style="font-size: 20px; font-weight: bold;">TOPLAM SİPARİŞ MİKTARI:</div>
+                    <div class="buyuk-miktar">${sip.toFixed(2)} KG</div>
+                </div>
+
+                <div class="n">
+                    <h3 style="margin-top:0;">ÖRME & SİPARİŞ NOTLARI</h3>
+                    <p style="white-space:pre-wrap; font-size:18px;">${s.not || 'Not bulunmuyor.'}</p>
+                </div>
+
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        window.onafterprint = function() { window.close(); };
+                        setTimeout(function(){ if(!window.closed) window.close(); }, 500);
+                    }
+                <\/script>
+            </body></html>
+        `);
+        rWindow.document.close();
+    }
+</script>
+</body>
+</html>

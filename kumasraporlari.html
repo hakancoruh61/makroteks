@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Teknik Rapor v28.2 - Manuel Giriş Sürümü</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; padding: 0; background-color: #f1f5f9; display: flex; flex-direction: column; min-height: 100vh;
+        }
+        .ana-icerik-sarma { flex: 1; padding: 15px; }
+        .ana-konteyner { max-width: 1250px; margin: 0 auto; background: white; padding: 12px; border: 1px solid #ccc; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .arsiv-alt-panel { max-width: 1250px; margin: 20px auto; width: 100%; background: #1e293b; color: white; border-radius: 8px; overflow: hidden; }
+        .arsiv-ust-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #0f172a; border-bottom: 1px solid #334155; flex-wrap: wrap; gap: 10px; }
+        .arsiv-baslik { font-weight: 800; font-size: 14px; text-transform: uppercase; color: #94a3b8; }
+        .arsiv-liste { padding: 10px 20px; display: flex; flex-direction: column; gap: 6px; max-height: 500px; overflow-y: auto; }
+        .arsiv-item { width: 100%; background: #334155; padding: 10px 15px; border-radius: 4px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; border: 1px solid transparent; }
+        .arsiv-item:hover { background: #475569; border-color: #3b82f6; }
+        .arsiv-item .kumas-ad { font-size: 13px; font-weight: bold; text-transform: uppercase; flex: 1; }
+        .arsiv-item .sil-btn { color: #f87171; font-weight: bold; padding: 2px 10px; border-radius: 4px; font-size: 18px; }
+        .rapor-ismi { font-size: 22pt; font-weight: 900; line-height: 1.2; margin-bottom: 6px; text-transform: uppercase; border: none; outline: none; width: 100%; background: transparent; }
+        .info-label { font-weight: bold; font-size: 10px; color: #1e3a8a; text-transform: uppercase; display: block; margin-bottom: 1px; }
+        .info-input { border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; outline: none; width: 100%; font-weight: 600; font-size: 11px; height: 22px; }
+        table { border-collapse: collapse; margin-bottom: 5px; width: 100%; }
+        .needle-cell { min-width: 19px; width: 19px; height: 21px; cursor: pointer; border: 1px solid #000; text-align: center; background-color: #fff; user-select: none; }
+        .cell-thick { font-family: 'Arial Black', sans-serif; font-size: 14px; font-weight: 900; }
+        .cell-normal { font-family: Arial, sans-serif; font-size: 15px; }
+        .row-label { background-color: #f1f5f9; font-weight: bold; width: 40px; border: 1px solid #000; font-size: 10px; text-align: center; }
+        .num-header { background-color: #1e293b; color: white; font-size: 8px; border: 1px solid #000; height: 14px; }
+        #imageBox { width: 100%; max-width: 550px; height: 280px; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; background: #f8fafc; margin-top: 10px; }
+        #imageBox img { width: 100%; height: 100%; object-fit: contain; }
+        .ayak-ana-blok { display: inline-flex; flex-direction: column; border: 1px solid #94a3b8; background: #f8fafc; }
+        .ayak-satir { display: flex; }
+        /* focus halkası kaldırıldı ve manuel giriş için stil düzenlendi */
+        .ayak-box { width: 19px; height: 19px; border: 1px solid #94a3b8; cursor: text; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; outline: none; text-transform: uppercase; overflow: hidden; }
+        .not-area { border: 1px solid #cbd5e1; border-radius: 4px; width: 100%; font-size: 11px; padding: 4px; resize: none; font-weight: 600; height: 50px; margin-top: 4px; outline: none; }
+        .copy-panel { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #0f172a; color: white; padding: 10px 25px; border-radius: 50px; display: none; align-items: center; gap: 15px; z-index: 10000; border: 2px solid #3b82f6; }
+        @media print { 
+            @page { size: A4 landscape; margin: 0.5cm; } 
+            body { display: block; background-color: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .arsiv-alt-panel, .no-print, #copyUI, #connectionStatus { display: none !important; } 
+            .ana-icerik-sarma { padding: 0; }
+            .ana-konteyner { border: none; padding: 0; width: 100% !important; box-shadow: none; transform: scale(0.98); transform-origin: top center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="ana-icerik-sarma">
+    <div id="copyUI" class="copy-panel no-print">
+        <span class="text-xs text-blue-300 font-bold uppercase">Kopyalanan:</span>
+        <span id="clipText" class="text-xl text-yellow-400 font-black"></span>
+        <button onclick="clearClip()" class="bg-red-600 px-3 py-1 rounded text-[10px] font-bold ml-2">İPTAL (ESC)</button>
+    </div>
+
+    <div class="ana-konteyner">
+        <div class="flex justify-between items-start border-b-2 pb-2 mb-2">
+            <div class="flex-none w-1/2 pr-4">
+                <div id="connectionStatus" class="text-[10px] font-bold mb-1 text-gray-400">Bağlanıyor...</div>
+                <input type="text" id="kumasIsmi" class="rapor-ismi" placeholder="KUMAŞ İSMİ GİRİNİZ">
+                <div class="flex gap-2">
+                    <div class="flex-1 space-y-1">
+                        <span class="info-label">İplik Bilgileri</span>
+                        <input type="text" class="info-input iplik-input" placeholder="İplik 1">
+                        <input type="text" class="info-input iplik-input" placeholder="İplik 2">
+                        <input type="text" class="info-input iplik-input" placeholder="İplik 3">
+                        <input type="text" class="info-input iplik-input" placeholder="İplik 4">
+                        <input type="text" class="info-input iplik-input" placeholder="İplik 5">
+                    </div>
+                    <div class="w-12 space-y-1 text-center">
+                        <span class="info-label">Oran</span>
+                        <input type="text" class="info-input oran-input text-center">
+                        <input type="text" class="info-input oran-input text-center">
+                        <input type="text" class="info-input oran-input text-center">
+                        <input type="text" class="info-input oran-input text-center">
+                        <input type="text" class="info-input oran-input text-center">
+                    </div>
+                    <div class="w-24 self-end">
+                        <div class="p-1 bg-blue-50 border border-blue-200 rounded">
+                            <span class="info-label text-blue-900 text-[8px]">Gramaj Ham</span>
+                            <input type="text" id="gramajInput" class="info-input font-black text-center text-xs h-8 border-blue-300" placeholder="GR/M2">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="info-label">Özel Notlar</span>
+                    <textarea id="ozelNotlar" class="not-area" placeholder="Rapor notlarını buraya ekleyin..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col items-end">
+                <div id="imageBox" onclick="document.getElementById('fileInput').click()">
+                    <span id="plusSign" class="text-gray-300 text-6xl font-thin">+</span>
+                    <img id="previewImg" src="" class="hidden">
+                </div>
+                <input type="file" id="fileInput" class="hidden" accept="image/*" onchange="previewFile()">
+            </div>
+        </div>
+
+        <div class="mb-2">
+            <span class="info-label text-gray-700 mb-1">İĞNE DİZİLİMİ</span>
+            <div class="ayak-ana-blok rounded">
+                <div id="ab1" class="ayak-satir"></div>
+                <div id="ab2" class="ayak-satir"></div>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-1 overflow-hidden">
+            <table><thead id="h1"></thead><tbody id="b1"></tbody></table>
+            <table><thead id="h2"></thead><tbody id="b2"></tbody></table>
+        </div>
+
+        <div class="mt-4 flex gap-2 no-print border-t pt-4">
+            <button onclick="saveToCloud()" class="bg-blue-800 text-white px-5 py-2 rounded font-bold text-xs shadow-md">BULUTA KAYDET</button>
+            <button onclick="saveAsNew()" class="bg-yellow-500 text-black px-5 py-2 rounded font-bold text-xs shadow-md">YENİ İSİMLE KAYDET</button>
+            <button onclick="window.print()" class="bg-emerald-600 text-white px-5 py-2 rounded font-bold text-xs shadow-md">YAZDIR</button>
+            <button onclick="resetForm()" class="bg-gray-500 text-white px-5 py-2 rounded font-bold text-xs">TEMİZLE / YENİ</button>
+        </div>
+    </div>
+
+    <div class="arsiv-alt-panel no-print">
+        <div class="arsiv-ust-bar">
+            <div class="arsiv-baslik">📂 KAYITLI RAPORLAR</div>
+            <input type="text" id="searchInput" onkeyup="filterArchive()" class="bg-slate-800 border border-slate-600 rounded px-4 py-1.5 text-xs w-80 text-white outline-none" placeholder="🔍 Kumaş ara...">
+        </div>
+        <div id="arsivListe" class="arsiv-liste"></div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAeFLhVyrv4sn4kJmUtusLIOPWwgmKxe5c",
+        authDomain: "kumastakip-6930a.firebaseapp.com",
+        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
+        projectId: "kumastakip-6930a",
+        storageBucket: "kumastakip-6930a.firebasestorage.app",
+        messagingSenderId: "796676836408",
+        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const rRef = db.ref('teknik_raporlar');
+
+    let clipboard = null, currentEditId = null, currentImgData = "", tumRaporlar = [];
+    const colors = {'V': '#000', 'ᴧ': '#cc0000', '─': '#444', '┌': '#000', '': 'transparent'};
+    const ayakStilleri = {'': {r:'#fff',y:'#000'}, '1': {r:'#fde047',y:'#000'}, '2': {r:'#4ade80',y:'#000'}, '3': {r:'#3b82f6',y:'#fff'}, '4': {r:'#ef4444',y:'#fff'}};
+
+    window.addEventListener('keydown', (e) => { if(e.key === 'Escape') clearClip(); });
+    function clearClip() { clipboard = null; document.getElementById('copyUI').style.display = 'none'; }
+
+    rRef.on('value', snap => {
+        const data = snap.val(); tumRaporlar = [];
+        if(data) Object.keys(data).forEach(id => tumRaporlar.push({id, ...data[id]}));
+        tumRaporlar.sort((a, b) => a.kumas.toLocaleUpperCase('tr-TR').localeCompare(b.kumas.toLocaleUpperCase('tr-TR'), 'tr'));
+        renderArchive();
+    });
+
+    function renderArchive() {
+        const liste = document.getElementById('arsivListe');
+        liste.innerHTML = '';
+        tumRaporlar.forEach(i => {
+            const item = document.createElement('div');
+            item.className = 'arsiv-item';
+            item.onclick = () => { loadReport(i.id); window.scrollTo({top: 0, behavior: 'smooth'}); };
+            item.innerHTML = `<span class="kumas-ad">${i.kumas}</span><button onclick="event.stopPropagation(); deleteReport('${i.id}')" class="sil-btn">×</button>`;
+            liste.appendChild(item);
+        });
+    }
+
+    function filterArchive() {
+        const v = document.getElementById('searchInput').value.toLocaleUpperCase('tr-TR');
+        document.querySelectorAll('.arsiv-item').forEach(item => {
+            item.style.display = item.querySelector('.kumas-ad').innerText.toLocaleUpperCase('tr-TR').includes(v) ? "flex" : "none";
+        });
+    }
+
+    // İğne Dizilimi (Ayaklar) için güncellenmiş manuel giriş fonksiyonu
+    function createAyak(s, e, id) {
+        const b = document.getElementById(id);
+        for(let i=s; i<=e; i++) {
+            const x = document.createElement('div'); 
+            x.className='ayak-box';
+            x.contentEditable = "true"; // Manuel harf/rakam girişi için aktif
+            
+            // Tıklama ile hızlı sayı değiştirme (1-4 arası)
+            x.onclick = function(ev) {
+                if(clipboard !== null) {
+                    this.innerText = clipboard;
+                    updateAyakColor(this, this.innerText);
+                }
+            };
+
+            // Klavye ile giriş yapıldığında rengi güncelle
+            x.oninput = function() {
+                // Sadece ilk karakteri al (hücre boyutunu korumak için)
+                if(this.innerText.length > 1) this.innerText = this.innerText.charAt(0);
+                updateAyakColor(this, this.innerText);
+            };
+
+            b.appendChild(x);
+        }
+    }
+
+    function updateAyakColor(el, val) {
+        // Eğer girilen değer 1-4 arasındaysa özel renkleri kullan, değilse standart beyaz yap
+        const s = ayakStilleri[val] || {r:'#fff', y:'#000'};
+        el.style.backgroundColor = s.r; 
+        el.style.color = s.y;
+    }
+
+    function buildTable(hId, bId, s, e) {
+        const h = document.getElementById(hId), b = document.getElementById(bId);
+        let hr = '<th class="row-label">S.</th>';
+        for(let i=s; i<=e; i++) hr += `<th class="num-header">${i}</th>`;
+        h.innerHTML = `<tr>${hr}</tr>`;
+        ['K1', 'K2', 'SEP', 'S1', 'S2', 'S3', 'S4'].forEach(label => {
+            let tr = document.createElement('tr');
+            if(label==='SEP') { tr.innerHTML=`<td colspan="${(e-s)+2}" style="height:4px"></td>`; }
+            else {
+                tr.innerHTML = `<td class="row-label">${label}</td>`;
+                for(let i=s; i<=e; i++) {
+                    let td = document.createElement('td'); 
+                    td.className = `needle-cell ${(label === 'K1' || label === 'K2') ? 'cell-normal' : 'cell-thick'}`;
+                    td.onclick = () => cellInteraction(td, label, 'left');
+                    td.oncontextmenu = (ev) => { ev.preventDefault(); cellInteraction(td, label, 'right'); };
+                    tr.appendChild(td);
+                }
+            }
+            b.appendChild(tr);
+        });
+    }
+
+    function cellInteraction(el, label, type) {
+        const symbols = (label === 'K1' || label === 'K2') ? ['', 'V', '─'] : ['', 'V', '─', 'ᴧ', '┌'];
+        if (type === 'right') {
+            clipboard = el.innerText;
+            document.getElementById('clipText').innerText = clipboard || '[BOŞ]';
+            document.getElementById('copyUI').style.display = 'flex';
+            return;
+        }
+        let sym = (clipboard !== null) ? clipboard : symbols[(symbols.indexOf(el.innerText) + 1) % symbols.length];
+        if ((label === 'K1' || label === 'K2') && !['', 'V', '─'].includes(sym)) return;
+        el.innerText = sym;
+        el.style.color = colors[sym] || '#000';
+        el.style.backgroundColor = (sym === '┌') ? '#4b5563' : '#fff';
+    }
+
+    function saveToCloud() {
+        if(!document.getElementById('kumasIsmi').value) return alert("İsim girin!");
+        const data = {
+            kumas: document.getElementById('kumasIsmi').value,
+            iplikler: Array.from(document.querySelectorAll('.iplik-input')).map(i=>i.value),
+            oranlar: Array.from(document.querySelectorAll('.oran-input')).map(i=>i.value),
+            notlar: document.getElementById('ozelNotlar').value,
+            gramaj: document.getElementById('gramajInput').value,
+            ayaklar: Array.from(document.querySelectorAll('.ayak-box')).map(b=>b.innerText),
+            orgu: Array.from(document.querySelectorAll('.needle-cell')).map(c=>c.innerText),
+            img: currentImgData
+        };
+        if(currentEditId) rRef.child(currentEditId).update(data); else rRef.push(data);
+        alert("Buluta Kaydedildi.");
+    }
+
+    function saveAsNew() { currentEditId = null; saveToCloud(); }
+
+    function loadReport(id) {
+        const itm = tumRaporlar.find(a => a.id === id); if(!itm) return;
+        currentEditId = id; 
+        document.getElementById('kumasIsmi').value = itm.kumas;
+        document.getElementById('gramajInput').value = itm.gramaj || "";
+        document.getElementById('ozelNotlar').value = itm.notlar || "";
+        document.querySelectorAll('.iplik-input').forEach((el,i)=>el.value=itm.iplikler[i]||"");
+        document.querySelectorAll('.oran-input').forEach((el,i)=>el.value=itm.oranlar[i]||"");
+        document.querySelectorAll('.ayak-box').forEach((el, i) => { 
+            el.innerText = itm.ayaklar ? itm.ayaklar[i] || "" : ""; 
+            updateAyakColor(el, el.innerText); 
+        });
+        document.querySelectorAll('.needle-cell').forEach((el, i) => {
+            el.innerText = itm.orgu ? itm.orgu[i] || "" : "";
+            el.style.color = colors[el.innerText] || '#000';
+            el.style.backgroundColor = (el.innerText === '┌') ? '#4b5563' : '#fff';
+        });
+        if(itm.img) { 
+            currentImgData=itm.img; document.getElementById('previewImg').src=itm.img; 
+            document.getElementById('previewImg').classList.remove('hidden'); 
+            document.getElementById('plusSign').classList.add('hidden'); 
+        } else {
+            currentImgData=""; document.getElementById('previewImg').classList.add('hidden'); 
+            document.getElementById('plusSign').classList.remove('hidden');
+        }
+    }
+
+    function deleteReport(id) { if(confirm("Silmek istediğinize emin misiniz?")) rRef.child(id).remove(); }
+    function previewFile() {
+        const f = document.getElementById('fileInput').files[0]; const r = new FileReader();
+        r.onloadend = () => { currentImgData = r.result; document.getElementById('previewImg').src = r.result; document.getElementById('previewImg').classList.remove('hidden'); document.getElementById('plusSign').classList.add('hidden'); };
+        if(f) r.readAsDataURL(f);
+    }
+    function resetForm() { location.reload(); }
+
+    db.ref(".info/connected").on("value", s => {
+        const d = document.getElementById('connectionStatus');
+        d.innerText = s.val() ? "● BULUT AKTİF" : "○ BAĞLANTI YOK";
+        d.className = s.val() ? "text-green-600 text-[10px] font-bold" : "text-red-600 text-[10px] font-bold";
+    });
+
+    createAyak(1, 48, 'ab1'); createAyak(49, 96, 'ab2');
+    buildTable('h1', 'b1', 1, 48); buildTable('h2', 'b2', 49, 96);
+</script>
+</body>
+</html>

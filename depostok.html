@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İplik Stok Takip v6.1 - Tarih Düzenlemeli</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f7f6; }
+        .container { max-width: 1300px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        
+        .form-grup { background: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #dcdde1; margin-bottom: 30px; }
+        .form-satir { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
+        .input-alan { display: flex; flex-direction: column; flex: 1; min-width: 160px; }
+        label { font-weight: 600; margin-bottom: 8px; color: #34495e; }
+        input, select { padding: 12px; border: 1px solid #bdc3c7; border-radius: 6px; font-size: 14px; }
+
+        button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-ekle { background-color: #27ae60; color: white; }
+        .btn-guncelle { background-color: #f1c40f; color: #2c3e50; display: none; }
+        .btn-yazdir { background-color: #34495e; color: white; }
+        
+        .btn-duzenle { background-color: #3498db; color: white; margin-right: 5px; padding: 5px 10px; font-size: 12px; }
+        .btn-sevk { background-color: #e67e22; color: white; margin-right: 5px; padding: 5px 10px; font-size: 12px; }
+        .btn-sil { background-color: #e74c3c; color: white; padding: 5px 10px; font-size: 12px; }
+        
+        .filtre-alani { background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ecf0f1; padding: 12px; text-align: left; }
+        th { background-color: #34495e; color: white; }
+        
+        .grup-row { cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .grup-row.row-even { background-color: #ffffff; }
+        .grup-row.row-odd { background-color: #e3f2fd; }
+        .grup-row:hover { background-color: #bbdefb !important; }
+        
+        .lot-row { display: none; background-color: #fafafa; font-size: 0.9em; }
+        .lot-row.active { display: table-row; }
+
+        .chevron { display: inline-block; margin-right: 10px; transition: transform 0.3s; color: #3498db; }
+        .active-chevron { transform: rotate(90deg); }
+        .toplam-alan { font-size: 1.4em; font-weight: bold; text-align: right; margin-top: 20px; color: #2c3e50; border-top: 2px solid #3498db; padding-top: 10px; }
+
+        @media print {
+            .form-grup, .filtre-alani, .islem-kolonu, .btn-yazdir { display: none !important; }
+            .lot-row { display: table-row !important; }
+            .chevron { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🧶 İplik Stok Takip & Bulut Sistemi</h1>
+
+    <div class="form-grup" id="iplikFormu">
+        <h2 id="formBaslik">➕ Yeni İplik Girişi</h2>
+        <input type="hidden" id="edit_id">
+        <div class="form-satir">
+            <div class="input-alan">
+                <label>Firma Adı</label>
+                <input type="text" id="inp_firma" placeholder="Firma">
+            </div>
+            <div class="input-alan">
+                <label>İplik Cinsi</label>
+                <input type="text" id="inp_cinsi" placeholder="Cins">
+            </div>
+            <div class="input-alan">
+                <label>Lot No</label>
+                <input type="text" id="inp_lot" placeholder="Lot No">
+            </div>
+            <div class="input-alan">
+                <label>Miktar (KG)</label>
+                <input type="number" id="inp_kg" step="0.01" placeholder="0.00">
+            </div>
+            <div class="input-alan">
+                <label>Tarih (Değiştirilebilir)</label>
+                <input type="date" id="inp_tarih">
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <button id="btn_kaydet" class="btn-ekle" onclick="iplikKaydet()">Kaydet</button>
+                <button id="btn_guncelle" class="btn-guncelle" onclick="iplikGuncelle()">Güncelle</button>
+                <button id="btn_iptal" style="display:none; background:#95a5a6; color:white;" onclick="formuSifirla()">İptal</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="filtre-alani">
+        <strong>🔍 Firma Filtresi:</strong>
+        <select id="filtre_firma" onchange="tabloyuCiz()">
+            <option value="TÜMÜ">Tüm Firmalar</option>
+        </select>
+        <button class="btn-yazdir" onclick="window.print()">🖨️ Yazdır / Rapor Al</button>
+    </div>
+
+    <div class="tablo-kapsayici">
+        <table>
+            <thead>
+                <tr>
+                    <th>Firma / İplik Cinsi</th>
+                    <th>Lot No / Tarih</th>
+                    <th>Miktar (KG)</th>
+                    <th class="islem-kolonu">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody id="stok_body"></tbody>
+        </table>
+        <div class="toplam-alan">Genel Toplam: <span id="genel_toplam">0.00</span> KG</div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAeFLhVyrv4sn4k JmUtusLIOPWwgmKxe5c",
+        authDomain: "kumastakip-6930a.firebaseapp.com",
+        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
+        projectId: "kumastakip-6930a",
+        storageBucket: "kumastakip-6930a.firebasestorage.app",
+        messagingSenderId: "796676836408",
+        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const iplikRef = db.ref('iplik_stok_ana_verisi');
+
+    let tumVeriler = {};
+    let acikGruplar = new Set(); 
+
+    window.onload = function() {
+        bugununTarihiniAyarla();
+    };
+
+    // Tarihi YYYY-MM-DD formatından DD/MM/YYYY formatına çevirir
+    function tarihFormatla(tarihStr) {
+        if(!tarihStr) return "";
+        const [yil, ay, gun] = tarihStr.split('-');
+        return `${gun}/${ay}/${yil}`;
+    }
+
+    function bugununTarihiniAyarla() {
+        const dateInput = document.getElementById('inp_tarih');
+        const bugun = new Date().toISOString().split('T')[0];
+        dateInput.value = bugun;
+    }
+
+    iplikRef.on('value', (snapshot) => {
+        tumVeriler = snapshot.val() || {};
+        filtreListesiniGuncelle();
+        tabloyuCiz();
+    });
+
+    function toggleGrup(grupKey) {
+        if (acikGruplar.has(grupKey)) {
+            acikGruplar.delete(grupKey);
+        } else {
+            acikGruplar.add(grupKey);
+        }
+        tabloyuCiz();
+    }
+
+    function tabloyuCiz() {
+        const tbody = document.getElementById('stok_body');
+        const filtre = document.getElementById('filtre_firma').value;
+        tbody.innerHTML = '';
+        let genelToplam = 0;
+
+        const gruplar = {};
+        Object.keys(tumVeriler).forEach(id => {
+            const veri = tumVeriler[id];
+            if (filtre === "TÜMÜ" || veri.firma === filtre) {
+                const key = `${veri.firma} - ${veri.cinsi}`;
+                if (!gruplar[key]) gruplar[key] = [];
+                gruplar[key].push({ id, ...veri });
+            }
+        });
+
+        const siralıGrupAnahtarlari = Object.keys(gruplar).sort();
+
+        siralıGrupAnahtarlari.forEach((grupKey, index) => {
+            const lotlar = gruplar[grupKey].sort((a, b) => a.lot.localeCompare(b.lot));
+            const grupToplam = lotlar.reduce((sum, item) => sum + parseFloat(item.kg), 0);
+            genelToplam += grupToplam;
+
+            const isOpen = acikGruplar.has(grupKey);
+            const zebraClass = (index % 2 === 0) ? 'row-even' : 'row-odd';
+
+            tbody.innerHTML += `
+                <tr class="grup-row ${zebraClass}" onclick="toggleGrup('${grupKey}')">
+                    <td><span class="chevron ${isOpen ? 'active-chevron' : ''}">▶</span> ${grupKey}</td>
+                    <td style="color: #666;">${lotlar.length} Lot Mevcut</td>
+                    <td style="font-weight:bold; color:#2c3e50;">${grupToplam.toFixed(2)} KG</td>
+                    <td class="islem-kolonu" style="font-size: 0.8em; color: #3498db;">${isOpen ? 'Kapat' : 'Lotları Gör'}</td>
+                </tr>`;
+
+            lotlar.forEach(veri => {
+                tbody.innerHTML += `
+                    <tr class="lot-row ${isOpen ? 'active' : ''}">
+                        <td style="padding-left: 40px; color: #555;">↳ Lot: ${veri.lot}</td>
+                        <td style="color: #777; font-size: 0.85em;">📅 ${tarihFormatla(veri.tarih)}</td>
+                        <td style="font-weight:bold;">${veri.kg.toFixed(2)} KG</td>
+                        <td class="islem-kolonu">
+                            <button class="btn-duzenle" onclick="event.stopPropagation(); duzenleModu('${veri.id}')">Düzenle</button>
+                            <button class="btn-sevk" onclick="event.stopPropagation(); hizliSevk('${veri.id}')">Sevk Et</button>
+                            <button class="btn-sil" onclick="event.stopPropagation(); kayitSil('${veri.id}')">Sil</button>
+                        </td>
+                    </tr>`;
+            });
+        });
+
+        document.getElementById('genel_toplam').textContent = genelToplam.toFixed(2);
+    }
+
+    function hizliSevk(id) {
+        const veri = tumVeriler[id];
+        const sevkMiktari = prompt(`LOT: ${veri.lot}\nKaç KG düşülecek? (Mevcut: ${veri.kg} KG)`);
+        if (sevkMiktari === null || sevkMiktari === "") return;
+        const miktar = parseFloat(sevkMiktari);
+        if (isNaN(miktar) || miktar <= 0) {
+            alert("Geçersiz miktar.");
+        } else if (miktar > (veri.kg + 0.001)) {
+            alert("Stok yetersiz!");
+        } else {
+            const yeniKg = Math.max(0, veri.kg - miktar);
+            db.ref('iplik_stok_ana_verisi/' + id).update({ kg: yeniKg });
+        }
+    }
+
+    function kayitSil(id) {
+        if (confirm("Bu lot kaydını silmek istediğinize emin misiniz?")) {
+            db.ref('iplik_stok_ana_verisi/' + id).remove();
+        }
+    }
+
+    function iplikKaydet() {
+        const v = formVerileriniAl();
+        if(v) iplikRef.push(v).then(() => formuSifirla());
+    }
+
+    function duzenleModu(id) {
+        const v = tumVeriler[id];
+        document.getElementById('edit_id').value = id;
+        document.getElementById('inp_firma').value = v.firma;
+        document.getElementById('inp_cinsi').value = v.cinsi;
+        document.getElementById('inp_lot').value = v.lot;
+        document.getElementById('inp_kg').value = v.kg;
+        document.getElementById('inp_tarih').value = v.tarih;
+        document.getElementById('btn_kaydet').style.display = 'none';
+        document.getElementById('btn_guncelle').style.display = 'inline-block';
+        document.getElementById('btn_iptal').style.display = 'inline-block';
+        document.getElementById('formBaslik').innerText = "📝 Kaydı Düzenle";
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function iplikGuncelle() {
+        const id = document.getElementById('edit_id').value;
+        const v = formVerileriniAl();
+        if(v && id) db.ref('iplik_stok_ana_verisi/' + id).update(v).then(() => { alert("Güncellendi"); formuSifirla(); });
+    }
+
+    function formVerileriniAl() {
+        const f = document.getElementById('inp_firma').value.trim();
+        const c = document.getElementById('inp_cinsi').value.trim();
+        const l = document.getElementById('inp_lot').value.trim();
+        const k = document.getElementById('inp_kg').value;
+        const t = document.getElementById('inp_tarih').value;
+        if(!f || !c || !l || !k || !t) { alert("Lütfen boş alan bırakmayın!"); return null; }
+        return { firma: f, cinsi: c, lot: l, kg: parseFloat(k), tarih: t };
+    }
+
+    function formuSifirla() {
+        document.getElementById('edit_id').value = '';
+        document.getElementById('inp_firma').value = '';
+        document.getElementById('inp_cinsi').value = '';
+        document.getElementById('inp_lot').value = '';
+        document.getElementById('inp_kg').value = '';
+        bugununTarihiniAyarla(); 
+        document.getElementById('btn_kaydet').style.display = 'inline-block';
+        document.getElementById('btn_guncelle').style.display = 'none';
+        document.getElementById('btn_iptal').style.display = 'none';
+        document.getElementById('formBaslik').innerText = "➕ Yeni İplik Girişi";
+    }
+
+    function filtreListesiniGuncelle() {
+        const select = document.getElementById('filtre_firma');
+        const eskiSecili = select.value;
+        const firmalar = new Set();
+        Object.values(tumVeriler).forEach(v => firmalar.add(v.firma));
+        select.innerHTML = '<option value="TÜMÜ">Tüm Firmalar</option>';
+        Array.from(firmalar).sort().forEach(f => {
+            select.innerHTML += `<option value="${f}">${f}</option>`;
+        });
+        select.value = Array.from(firmalar).includes(eskiSecili) ? eskiSecili : "TÜMÜ";
+    }
+</script>
+
+</body>
+</html>

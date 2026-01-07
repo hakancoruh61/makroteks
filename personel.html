@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAKROTEKS Personel Yönetim v10.2</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
+    <style>
+        :root { --primary: #1a73e8; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --info: #17a2b8; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 15px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        #raporBasligi { text-align: center; font-size: 24px; font-weight: 800; margin-bottom: 15px; text-transform: uppercase; color: #000; border-bottom: 3px solid #000; padding-bottom: 8px; }
+        
+        .status-bar { padding: 4px 8px; font-size: 11px; border-radius: 4px; display: inline-block; }
+        .online { background: #d4edda; color: #155724; }
+        .offline { background: #f8d7da; color: #721c24; }
+
+        /* ARALIKLAR DARALTILDI */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; }
+        input, select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; font-size: 13px; }
+        
+        button { padding: 6px 12px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: 0.3s; font-size: 13px; }
+        .btn-add { background: var(--success); color: white; }
+        .btn-del { background: var(--danger); color: white; padding: 4px 8px; }
+        .btn-edit { background: var(--warning); color: #000; padding: 4px 8px; }
+        .btn-excel { background: #1d6f42; color: white; }
+        .btn-print { background: #333; color: white; }
+
+        /* TABLO SATIRLARI SIKIŞTIRILDI */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { padding: 6px 8px; text-align: left; border: 1px solid #dee2e6; }
+        th { background: var(--primary); color: white; text-transform: uppercase; font-size: 12px; }
+        tfoot { background: #eee; font-weight: bold; font-size: 14px; }
+        .currency-align { text-align: right; font-weight: 600; }
+        
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 50px rgba(0,0,0,0.5); z-index: 1000; width: 450px; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        @media print { .no-print { display: none !important; } .container { box-shadow: none; border: none; width: 100%; margin: 0; padding: 0; } }
+    </style>
+</head>
+<body>
+
+<div id="raporBasligi">PERSONEL MAAŞ ÇİZELGESİ</div>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" class="no-print">
+        <div id="connectionStatus" class="status-bar offline">Bağlantı Kuruluyor...</div>
+        <div>
+            <button class="btn-excel" onclick="excelIndir()">📁 EXCEL</button>
+            <button class="btn-print" onclick="window.print()">🖨️ YAZDIR</button>
+        </div>
+    </div>
+
+    <div class="form-grid no-print">
+        <input type="month" id="f_period">
+        <input type="text" id="f_name" placeholder="Ad Soyad">
+        <input type="text" id="f_role" placeholder="Görevi">
+        <input type="number" id="f_base" placeholder="Baz Maaş">
+        <input type="number" id="f_days" placeholder="Gün">
+        <input type="number" id="f_bonus" placeholder="M. Farkı">
+        <input type="number" id="f_overtime" placeholder="Mesai">
+        <input type="number" id="f_deduction" placeholder="Kesinti">
+        <button class="btn-add" onclick="personelEkle()">+ EKLE</button>
+    </div>
+
+    <div style="margin-bottom: 10px;" class="no-print">
+        <strong>Filtrele: </strong>
+        <select id="donemSecici" onchange="tabloGuncelle()" style="width: 200px;"></select>
+    </div>
+
+    <table id="mainTable">
+        <thead>
+            <tr>
+                <th style="width: 30px; text-align: center;">No</th>
+                <th>Ad Soyad</th>
+                <th>Görev</th>
+                <th>Dönem</th>
+                <th class="currency-align">Baz Maaş</th>
+                <th style="text-align:center">Gün</th>
+                <th class="currency-align">M. Farkı</th>
+                <th class="currency-align">Mesai</th>
+                <th class="currency-align">Kesinti</th>
+                <th class="currency-align" style="background:#004494; color:white;">NET ÖDEME</th>
+                <th class="no-print" style="width: 100px;">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+        <tfoot id="tableFoot"></tfoot>
+    </table>
+</div>
+
+<div class="modal-overlay" id="overlay" onclick="modalKapat()"></div>
+<div class="modal" id="editModal">
+    <h3 style="border-bottom: 2px solid var(--warning); padding-bottom: 10px; margin-top: 0;">✏️ Kayıt Güncelleme</h3>
+    <div class="modal-grid">
+        <div class="form-group"><label>Ad Soyad</label><input type="text" id="e_name"></div>
+        <div class="form-group"><label>Görev</label><input type="text" id="e_role"></div>
+        <div class="form-group"><label>Baz Maaş</label><input type="number" id="e_base"></div>
+        <div class="form-group"><label>Çalışılan Gün</label><input type="number" id="e_days"></div>
+        <div class="form-group"><label>M. Farkı</label><input type="number" id="e_bonus"></div>
+        <div class="form-group"><label>Mesai</label><input type="number" id="e_overtime"></div>
+        <div class="form-group"><label>Kesinti</label><input type="number" id="e_deduction"></div>
+    </div>
+    <div style="margin-top: 15px; text-align: right;">
+        <button class="btn-add" onclick="guncelleKaydet()">💾 KAYDET</button>
+        <button class="btn-del" onclick="modalKapat()">İPTAL</button>
+    </div>
+</div>
+
+<script>
+    // Firebase yapılandırması ve fonksiyonlar değişmedi (Dosyanın geri kalanı aynı)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAeFLhVyrv4sn4kJmUtusLIOPWwgmKxe5c",
+        authDomain: "kumastakip-6930a.firebaseapp.com",
+        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
+        projectId: "kumastakip-6930a",
+        storageBucket: "kumastakip-6930a.firebasestorage.app",
+        messagingSenderId: "796676836408",
+        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const pRef = db.ref('personel_maaslari');
+    let tumVeriler = [];
+    let aktifID = null;
+
+    const trCurrency = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' });
+
+    function ayAdinaCevir(periodStr) {
+        if(!periodStr) return "Belirsiz";
+        const [yil, ay] = periodStr.split('-');
+        const tarih = new Date(yil, ay - 1);
+        return tarih.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+    }
+
+    db.ref(".info/connected").on("value", (snap) => {
+        const s = document.getElementById('connectionStatus');
+        s.innerText = snap.val() ? "● BULUT SİSTEMİNE BAĞLI" : "○ BAĞLANTI KESİLDİ";
+        s.className = "status-bar " + (snap.val() ? "online" : "offline");
+    });
+
+    pRef.on('value', (snap) => {
+        const data = snap.val();
+        tumVeriler = [];
+        if(data) Object.keys(data).forEach(id => tumVeriler.push({id, ...data[id]}));
+        filtreListesiniYaz();
+        tabloGuncelle();
+    });
+
+    function personelEkle() {
+        const p = {
+            period: document.getElementById('f_period').value,
+            name: document.getElementById('f_name').value,
+            role: document.getElementById('f_role').value,
+            base: parseFloat(document.getElementById('f_base').value) || 0,
+            days: parseFloat(document.getElementById('f_days').value) || 0,
+            bonus: parseFloat(document.getElementById('f_bonus').value) || 0,
+            overtime: parseFloat(document.getElementById('f_overtime').value) || 0,
+            deduction: parseFloat(document.getElementById('f_deduction').value) || 0
+        };
+        if(!p.name || !p.period) return alert("Lütfen Ad ve Dönem giriniz!");
+        pRef.push(p).then(() => {
+            ['f_name','f_role','f_base','f_days','f_bonus','f_overtime','f_deduction'].forEach(id => document.getElementById(id).value = "");
+        });
+    }
+
+    function tabloGuncelle() {
+        const body = document.getElementById('tableBody');
+        const foot = document.getElementById('tableFoot');
+        const secilen = document.getElementById('donemSecici').value;
+        const baslik = document.getElementById('raporBasligi');
+        
+        body.innerHTML = "";
+        let toplamNet = 0;
+        let toplamBaz = 0;
+        let siraNo = 1;
+
+        baslik.innerText = secilen === "Tümü" ? "GENEL MAAŞ ÇİZELGESİ" : ayAdinaCevir(secilen).toUpperCase() + " MAAŞ ÇİZELGESİ";
+
+        tumVeriler.forEach(p => {
+            if (secilen !== "Tümü" && p.period !== secilen) return;
+            
+            const hakedis = ((p.base / 30) * p.days) + p.bonus + p.overtime - p.deduction;
+            toplamNet += hakedis;
+            toplamBaz += p.base;
+
+            body.innerHTML += `
+                <tr>
+                    <td style="text-align: center; color: #666;">${siraNo++}</td>
+                    <td><strong>${p.name}</strong></td>
+                    <td>${p.role}</td>
+                    <td>${ayAdinaCevir(p.period)}</td>
+                    <td class="currency-align">${trCurrency.format(p.base)}</td>
+                    <td style="text-align:center">${p.days}</td>
+                    <td class="currency-align">${trCurrency.format(p.bonus)}</td>
+                    <td class="currency-align">${trCurrency.format(p.overtime)}</td>
+                    <td class="currency-align">${trCurrency.format(p.deduction)}</td>
+                    <td class="currency-align" style="color:#004494">${trCurrency.format(hakedis)}</td>
+                    <td class="no-print">
+                        <button class="btn-edit" onclick="modalAc('${p.id}')">✏️</button>
+                        <button class="btn-del" onclick="sil('${p.id}')">❌</button>
+                    </td>
+                </tr>`;
+        });
+
+        foot.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align:right">TOPLAM:</td>
+                <td class="currency-align">${trCurrency.format(toplamBaz)}</td>
+                <td colspan="4"></td>
+                <td class="currency-align" style="background:#004494; color:white; font-size:15px;">${trCurrency.format(toplamNet)}</td>
+                <td class="no-print"></td>
+            </tr>`;
+    }
+
+    function excelIndir() {
+        const secilen = document.getElementById('donemSecici').value;
+        let csvContent = "\uFEFF";
+        csvContent += "No;Ad Soyad;Görev;Dönem;Baz Maaş;Gün;M.Farkı;Mesai;Kesinti;Net Ödeme\n";
+        let siraNoExcel = 1;
+        tumVeriler.forEach(p => {
+            if (secilen !== "Tümü" && p.period !== secilen) return;
+            const hakedis = ((p.base / 30) * p.days) + p.bonus + p.overtime - p.deduction;
+            csvContent += [siraNoExcel++, p.name, p.role, ayAdinaCevir(p.period), p.base, p.days, p.bonus, p.overtime, p.deduction, hakedis.toFixed(2)].join(";") + "\n";
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `Maas_Raporu_${secilen}.csv`;
+        link.click();
+    }
+
+    function modalAc(id) {
+        aktifID = id;
+        const p = tumVeriler.find(x => x.id === id);
+        ['name','role','base','days','bonus','overtime','deduction'].forEach(key => document.getElementById('e_'+key).value = p[key]);
+        document.getElementById('editModal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function guncelleKaydet() {
+        if(!aktifID) return;
+        db.ref('personel_maaslari/'+aktifID).update({
+            name: document.getElementById('e_name').value,
+            role: document.getElementById('e_role').value,
+            base: parseFloat(document.getElementById('e_base').value) || 0,
+            days: parseFloat(document.getElementById('e_days').value) || 0,
+            bonus: parseFloat(document.getElementById('e_bonus').value) || 0,
+            overtime: parseFloat(document.getElementById('e_overtime').value) || 0,
+            deduction: parseFloat(document.getElementById('e_deduction').value) || 0
+        }).then(() => { modalKapat(); alert("Güncellendi."); });
+    }
+
+    function filtreListesiniYaz() {
+        const select = document.getElementById('donemSecici');
+        const suan = select.value;
+        const donemler = [...new Set(tumVeriler.map(p => p.period))].sort().reverse();
+        select.innerHTML = '<option value="Tümü">Tüm Dönemleri Göster</option>';
+        donemler.forEach(d => select.innerHTML += `<option value="${d}">${ayAdinaCevir(d)}</option>`);
+        if(suan) select.value = suan;
+    }
+
+    function modalKapat() { document.querySelectorAll('.modal, .modal-overlay').forEach(el => el.style.display='none'); aktifID = null; }
+    function sil(id) { if(confirm("Kayıt silinecek! Emin misiniz?")) db.ref('personel_maaslari/'+id).remove(); }
+    document.getElementById('f_period').valueAsDate = new Date();
+</script>
+</body>
+</html>

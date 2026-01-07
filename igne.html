@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAKROTEKS İğne Takip v1.8</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
+    <style>
+        :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --warning: #f39c12; --blue: #3498db; --purple: #8e44ad; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 15px; background-color: #ecf0f1; color: #2c3e50; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        .header { text-align: center; border-bottom: 3px solid var(--primary); margin-bottom: 20px; padding-bottom: 10px; }
+        .header h1 { margin: 0; text-transform: uppercase; font-size: 22px; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 20px; }
+        label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #555; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; width: 100%; box-sizing: border-box; }
+        
+        /* ARAMA VE SEÇİLİ ÖZET */
+        .search-section { background: #d1ecf1; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #bee5eb; }
+        .search-flex { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .search-input { flex: 1; padding: 12px; border: 2px solid var(--blue); border-radius: 4px; font-size: 16px; font-weight: bold; }
+        
+        .filter-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #abdde5; }
+        .summary-card { text-align: center; padding: 5px; border-right: 1px solid #eee; }
+        .summary-card:last-child { border-right: none; }
+        .summary-card span { display: block; font-size: 11px; font-weight: bold; color: #666; }
+        .summary-card strong { font-size: 18px; color: var(--primary); }
+
+        button { padding: 8px 12px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; font-size: 11px; }
+        .btn-add { background: var(--success); color: white; width: 100%; }
+        .btn-update { background: var(--warning); color: white; width: 100%; display: none; }
+        
+        .input-qty { width: 55px !important; text-align: center; font-weight: bold; border: 2px solid #3498db !important; }
+        .btn-stok-ekle { background: var(--success); color: white; padding: 6px 8px; }
+        .btn-stok-dus { background: var(--danger); color: white; padding: 6px 8px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+        th { background: var(--primary); color: white; text-transform: uppercase; font-size: 11px; }
+        
+        tfoot { background: #2c3e50; color: white; }
+        .grand-total { background: #000; color: #00ff00; font-size: 20px; text-align: center; font-weight: bold; padding: 15px; }
+
+        .kritik-stok { background-color: #ffcccc !important; }
+        .fan-badge { background: #2c3e50; color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .orme-badge { background: #f3e5f5; color: var(--purple); padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header"><h1>MAKROTEKS İĞNE & FAİN (E) STOK SİSTEMİ</h1></div>
+
+    <span id="connStatus" style="font-size:11px; font-weight:bold;">Bağlantı Kuruluyor...</span>
+
+    <div class="form-grid" id="inputForm">
+        <div><label>FAİN (E) NO</label><input type="text" id="i_fan" placeholder="No"></div>
+        <div><label>Örme Tipi</label><select id="i_orme"><option value="Süprem">Süprem</option><option value="İnterlok">İnterlok</option></select></div>
+        <div><label>İğne Tipi</label><select id="i_tipi"><option value="Kapak İğnesi">Kapak İğnesi</option><option value="Silindir İğnesi">Silindir İğnesi</option><option value="Süprem İğnesi">Süprem İğnesi</option></select></div>
+        <div><label>Marka</label><input type="text" id="i_marka" placeholder="Marka"></div>
+        <div><label>Ayak No</label><input type="text" id="i_ayak" placeholder="Ayak"></div>
+        <div><label>İğne No</label><input type="text" id="i_no" placeholder="No"></div>
+        <div><label>Adet</label><input type="number" id="i_adet" value="0"></div>
+        <div style="display: flex; flex-direction: column; justify-content: flex-end;">
+            <button id="addBtn" class="btn-add" onclick="igneEkle()">SİSTEME EKLE</button>
+            <button id="updBtn" class="btn-update" onclick="igneGuncelleKaydet()">KAYDET</button>
+            <button id="cancelBtn" onclick="formuTemizle()" style="display:none; background:#95a5a5; color:white; margin-top:2px;">İPTAL</button>
+        </div>
+    </div>
+
+    <div class="search-section">
+        <div class="search-flex">
+            <strong style="white-space:nowrap;">🔍 FAİN (E) ARA:</strong>
+            <input type="text" id="fainArama" class="search-input" onkeyup="tabloFiltrele()" placeholder="Hangi makineyi görmek istiyorsunuz?">
+        </div>
+        <div class="filter-summary">
+            <div class="summary-card"><span>SEÇİLİ FAİN KAPAK</span><strong id="f_kapak">0</strong></div>
+            <div class="summary-card"><span>SEÇİLİ FAİN SİLİNDİR</span><strong id="f_silindir">0</strong></div>
+            <div class="summary-card"><span>SEÇİLİ FAİN SÜPREM</span><strong id="f_suprem">0</strong></div>
+            <div class="summary-card" style="background:#e3f2fd;"><span>SEÇİLİ TOPLAM</span><strong id="f_toplam" style="color:var(--blue)">0</strong></div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>FAİN (E)</th><th>Örme Tipi</th><th>İğne Tipi</th><th>Marka</th><th>Ayak</th><th>No</th><th>Stok</th><th style="text-align:center">Hızlı Stok İşlemi</th><th>✏️</th>
+            </tr>
+        </thead>
+        <tbody id="igneBody"></tbody>
+    </table>
+    
+    <div id="genelToplamAlan" class="grand-total">DEPODAKİ GENEL TOPLAM: 0 ADET</div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAeFLhVyrv4sn4kJmUtusLIOPWwgmKxe5c",
+        authDomain: "kumastakip-6930a.firebaseapp.com",
+        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
+        projectId: "kumastakip-6930a",
+        storageBucket: "kumastakip-6930a.firebasestorage.app",
+        messagingSenderId: "796676836408",
+        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const igneRef = db.ref('igne_stoklari');
+    let tumVeriler = {};
+
+    db.ref(".info/connected").on("value", (s) => {
+        const el = document.getElementById('connStatus');
+        el.innerText = s.val() ? "● SİSTEM ÇEVRİMİÇİ" : "○ BAĞLANTI YOK";
+        el.style.color = s.val() ? "#27ae60" : "#e74c3c";
+    });
+
+    // GELİŞMİŞ FİLTRELEME VE TOPLAM HESAPLAMA
+    function tabloFiltrele() {
+        const filter = document.getElementById("fainArama").value.toUpperCase();
+        const rows = document.getElementById("igneBody").getElementsByTagName("tr");
+        
+        let sk = 0, ss = 0, sp = 0; // Seçili Kapak, Seçili Silindir, Seçili Süprem
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const fainCell = row.getElementsByTagName("td")[0];
+            const tipCell = row.getElementsByTagName("td")[2];
+            const adetCell = row.querySelector(".stock-badge");
+            
+            if (fainCell) {
+                const fainNo = fainCell.textContent || fainCell.innerText;
+                const i_tipi = tipCell.textContent || tipCell.innerText;
+                const adet = parseInt(adetCell.innerText) || 0;
+
+                if (fainNo.toUpperCase().indexOf(filter) > -1) {
+                    row.style.display = "";
+                    // Filtreye uyanların toplamını al
+                    if(i_tipi.includes("Kapak")) sk += adet;
+                    else if(i_tipi.includes("Silindir")) ss += adet;
+                    else if(i_tipi.includes("Süprem")) sp += adet;
+                } else {
+                    row.style.display = "none";
+                }
+            }
+        }
+        // Alt kutucukları güncelle
+        document.getElementById('f_kapak').innerText = sk;
+        document.getElementById('f_silindir').innerText = ss;
+        document.getElementById('f_suprem').innerText = sp;
+        document.getElementById('f_toplam').innerText = sk + ss + sp;
+    }
+
+    function formOku() {
+        return {
+            fan: document.getElementById('i_fan').value || "-",
+            orme: document.getElementById('i_orme').value,
+            tipi: document.getElementById('i_tipi').value,
+            marka: document.getElementById('i_marka').value,
+            ayak: document.getElementById('i_ayak').value,
+            no: document.getElementById('i_no').value,
+            adet: parseInt(document.getElementById('i_adet').value) || 0
+        };
+    }
+
+    function igneEkle() {
+        const d = formOku();
+        if(!d.marka) return alert("Marka giriniz!");
+        igneRef.push(d).then(() => formuTemizle());
+    }
+
+    function stokIslem(id, t) {
+        const qty = parseInt(document.getElementById('qty_'+id).value);
+        if(!qty || qty <= 0) return;
+        db.ref('igne_stoklari/'+id+'/adet').transaction(c => {
+            let n = (c || 0) + (t === 'e' ? qty : -qty);
+            return n < 0 ? 0 : n;
+        }).then(()=> document.getElementById('qty_'+id).value = "");
+    }
+
+    function duzenleModu(id, f, o, t, m, a, n, ad) {
+        duzenlenenId = id;
+        document.getElementById('i_fan').value = f;
+        document.getElementById('i_orme').value = o;
+        document.getElementById('i_tipi').value = t;
+        document.getElementById('i_marka').value = m;
+        document.getElementById('i_ayak').value = a;
+        document.getElementById('i_no').value = n;
+        document.getElementById('i_adet').value = ad;
+        document.getElementById('addBtn').style.display = 'none';
+        document.getElementById('updBtn').style.display = 'block';
+        document.getElementById('cancelBtn').style.display = 'block';
+        window.scrollTo(0,0);
+    }
+
+    function igneGuncelleKaydet() {
+        db.ref('igne_stoklari/' + duzenlenenId).update(formOku()).then(() => formuTemizle());
+    }
+
+    function formuTemizle() {
+        duzenlenenId = null;
+        ['i_fan','i_marka','i_ayak','i_no'].forEach(x => document.getElementById(x).value="");
+        document.getElementById('i_adet').value="0";
+        document.getElementById('addBtn').style.display='block';
+        document.getElementById('updBtn').style.display='none';
+        document.getElementById('cancelBtn').style.display='none';
+    }
+
+    igneRef.on('value', (snap) => {
+        const data = snap.val();
+        const body = document.getElementById('igneBody');
+        body.innerHTML = "";
+        let gTop = 0;
+
+        if(data) {
+            Object.keys(data).forEach(id => {
+                const i = data[id];
+                gTop += i.adet;
+                body.innerHTML += `
+                    <tr class="${i.adet < 10 ? 'kritik-stok' : ''}">
+                        <td><span class="fan-badge">${i.fan}</span></td>
+                        <td><span class="orme-badge">${i.orme}</span></td>
+                        <td>${i.tipi}</td>
+                        <td>${i.marka}</td>
+                        <td>${i.ayak}</td>
+                        <td>${i.no}</td>
+                        <td style="text-align:center"><span class="stock-badge">${i.adet}</span></td>
+                        <td>
+                            <div style="display:flex; gap:5px; justify-content:center">
+                                <input type="number" id="qty_${id}" class="input-qty" placeholder="Adet">
+                                <button class="btn-stok-ekle" onclick="stokIslem('${id}','e')">EKLE</button>
+                                <button class="btn-stok-dus" onclick="stokIslem('${id}','d')">DÜŞ</button>
+                            </div>
+                        </td>
+                        <td><button onclick="duzenleModu('${id}','${i.fan}','${i.orme}','${i.tipi}','${i.marka}','${i.ayak}','${i.no}',${i.adet})">✏️</button></td>
+                    </tr>`;
+            });
+        }
+        document.getElementById('genelToplamAlan').innerText = "DEPODAKİ GENEL TOPLAM: " + gTop + " ADET";
+        tabloFiltrele(); // Veri geldiğinde mevcut filtreyi uygula
+    });
+</script>
+</body>
+</html>
