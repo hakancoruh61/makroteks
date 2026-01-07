@@ -29,12 +29,13 @@
 
         /* Yan Menü Tasarımı */
         .sidebar {
-            width: 240px;
+            width: 260px;
             background-color: var(--sidebar-bg);
             display: flex;
             flex-direction: column;
             box-shadow: 0 0 20px rgba(0,0,0,0.2);
             z-index: 100;
+            border-right: 1px solid var(--border-color);
         }
 
         .sidebar-header {
@@ -52,18 +53,23 @@
         }
 
         .menu-group {
-            padding: 20px 0;
+            padding: 10px 0;
             flex-grow: 1;
             overflow-y: auto;
         }
 
+        /* Kaydırma Çubuğu */
+        .menu-group::-webkit-scrollbar { width: 5px; }
+        .menu-group::-webkit-scrollbar-thumb { background: var(--border-color); }
+
         .menu-label {
-            padding: 0 25px 10px;
+            padding: 20px 25px 10px;
             font-size: 11px;
             font-weight: 700;
-            color: var(--text-muted);
+            color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 1px;
+            border-top: 1px solid rgba(255,255,255,0.05);
         }
 
         .nav-button {
@@ -80,6 +86,7 @@
             font-size: 14px;
             font-weight: 500;
             border-left: 4px solid transparent;
+            text-align: left;
         }
 
         .nav-button i {
@@ -145,7 +152,6 @@
             background-color: white;
         }
 
-        /* Orta Karşılama Ekranı */
         .welcome-screen {
             position: absolute;
             top: 50%;
@@ -188,7 +194,7 @@
     <nav class="sidebar">
         <div class="sidebar-header">
             <i class="fas fa-industry" style="color: var(--accent); font-size: 24px; margin-bottom: 10px;"></i>
-            <h2>ÜRETİM PANELİ</h2>
+            <h2>MAKROTEKS ERP</h2>
         </div>
         <div class="menu-group">
             <div class="menu-label">Lojistik & Depo</div>
@@ -201,7 +207,8 @@
             <button class="nav-button" onclick="loadPage('kumasstok.html', 'Kumaş Takip')">
                 <i class="fas fa-scroll"></i> Kumaş Takip
             </button>
-            <div class="menu-label" style="margin-top:20px;">İnsan Kaynakları</div>
+
+            <div class="menu-label">İnsan Kaynakları</div>
             <button class="nav-button" onclick="loadPage('personel.html', 'Personel Yönetimi', true)">
                 <i class="fas fa-users-gear"></i> Personel Kartları
             </button>
@@ -210,6 +217,20 @@
             </button>
             <button class="nav-button" onclick="loadPage('igne.html', 'İğne Takibi')">
                 <i class="fas fa-tools"></i> İğne Takip
+            </button>
+
+            <div class="menu-label">Maliyet & Muhasebe</div>
+            <button class="nav-button" onclick="loadPage('oran.html', 'İplik Oran Hesaplama')">
+                <i class="fas fa-percentage"></i> İplik Oran
+            </button>
+            <button class="nav-button" onclick="loadPage('maliyet.html', 'Kumaş Maliyet Hesabı')">
+                <i class="fas fa-file-invoice-dollar"></i> Maliyet Hesabı
+            </button>
+            <button class="nav-button" onclick="loadPage('kumasraporlari.html', 'Kumaş Raporları')">
+                <i class="fas fa-file-contract"></i> Kumaş Raporları
+            </button>
+            <button class="nav-button" onclick="loadPage('giderler.html', 'Gider Yönetimi', true)">
+                <i class="fas fa-wallet"></i> Gider Takibi
             </button>
         </div>
     </nav>
@@ -246,30 +267,7 @@
         </section>
     </main>
 
-    <nav class="sidebar" style="border-left: 1px solid var(--border-color);">
-        <div class="sidebar-header">
-            <i class="fas fa-chart-pie" style="color: #10b981; font-size: 24px; margin-bottom: 10px;"></i>
-            <h2>ANALİZ PANELİ</h2>
-        </div>
-        <div class="menu-group">
-            <div class="menu-label">Maliyet & Muhasebe</div>
-            <button class="nav-button" onclick="loadPage('oran.html', 'İplik Oran Hesaplama')">
-                <i class="fas fa-percentage"></i> İplik Oran
-            </button>
-            <button class="nav-button" onclick="loadPage('maliyet.html', 'Kumaş Maliyet Hesabı')">
-                <i class="fas fa-file-invoice-dollar"></i> Maliyet Hesabı
-            </button>
-            <button class="nav-button" onclick="loadPage('kumasraporlari.html', 'Kumaş Raporları')">
-                <i class="fas fa-file-contract"></i> Kumaş Raporları
-            </button>
-            <button class="nav-button" onclick="loadPage('giderler.html', 'Gider Yönetimi')">
-                <i class="fas fa-wallet"></i> Gider Takibi
-            </button>
-        </div>
-    </nav>
-
     <script>
-        // Kurları Getir
         async function fetchRates() {
             try {
                 const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
@@ -288,10 +286,14 @@
             }
         }
 
+        // Şifre kontrolü bu fonksiyonda gerçekleşir
         function loadPage(url, title, password = false) {
             if (password) {
                 const pass = prompt("Yetkili şifresini giriniz:");
-                if (pass !== "1308") { alert("Yetkisiz erişim!"); return; }
+                if (pass !== "1308") { 
+                    alert("Yetkisiz erişim!"); 
+                    return; 
+                }
             }
             document.getElementById('welcome').style.display = 'none';
             const frame = document.getElementById('mainFrame');
@@ -306,7 +308,7 @@
         }
 
         setInterval(updateTime, 1000);
-        setInterval(fetchRates, 3600000); // Saat başı kurları güncelle
+        setInterval(fetchRates, 3600000);
         updateTime();
         fetchRates();
     </script>
