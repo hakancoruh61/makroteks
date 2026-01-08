@@ -135,7 +135,11 @@
         bugununTarihiniAyarla();
     };
 
-    // Tarihi YYYY-MM-DD formatından DD/MM/YYYY formatına çevirir
+    // Sayıları 1.000,00 formatına çeviren fonksiyon
+    function formatKG(sayi) {
+        return parseFloat(sayi).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     function tarihFormatla(tarihStr) {
         if(!tarihStr) return "";
         const [yil, ay, gun] = tarihStr.split('-');
@@ -193,7 +197,7 @@
                 <tr class="grup-row ${zebraClass}" onclick="toggleGrup('${grupKey}')">
                     <td><span class="chevron ${isOpen ? 'active-chevron' : ''}">▶</span> ${grupKey}</td>
                     <td style="color: #666;">${lotlar.length} Lot Mevcut</td>
-                    <td style="font-weight:bold; color:#2c3e50;">${grupToplam.toFixed(2)} KG</td>
+                    <td style="font-weight:bold; color:#2c3e50;">${formatKG(grupToplam)} KG</td>
                     <td class="islem-kolonu" style="font-size: 0.8em; color: #3498db;">${isOpen ? 'Kapat' : 'Lotları Gör'}</td>
                 </tr>`;
 
@@ -202,7 +206,7 @@
                     <tr class="lot-row ${isOpen ? 'active' : ''}">
                         <td style="padding-left: 40px; color: #555;">↳ Lot: ${veri.lot}</td>
                         <td style="color: #777; font-size: 0.85em;">📅 ${tarihFormatla(veri.tarih)}</td>
-                        <td style="font-weight:bold;">${veri.kg.toFixed(2)} KG</td>
+                        <td style="font-weight:bold;">${formatKG(veri.kg)} KG</td>
                         <td class="islem-kolonu">
                             <button class="btn-duzenle" onclick="event.stopPropagation(); duzenleModu('${veri.id}')">Düzenle</button>
                             <button class="btn-sevk" onclick="event.stopPropagation(); hizliSevk('${veri.id}')">Sevk Et</button>
@@ -212,14 +216,14 @@
             });
         });
 
-        document.getElementById('genel_toplam').textContent = genelToplam.toFixed(2);
+        document.getElementById('genel_toplam').textContent = formatKG(genelToplam);
     }
 
     function hizliSevk(id) {
         const veri = tumVeriler[id];
-        const sevkMiktari = prompt(`LOT: ${veri.lot}\nKaç KG düşülecek? (Mevcut: ${veri.kg} KG)`);
+        const sevkMiktari = prompt(`LOT: ${veri.lot}\nKaç KG düşülecek? (Mevcut: ${formatKG(veri.kg)} KG)`);
         if (sevkMiktari === null || sevkMiktari === "") return;
-        const miktar = parseFloat(sevkMiktari);
+        const miktar = parseFloat(sevkMiktari.replace(',', '.')); // Virgüllü girişe de tolerans tanır
         if (isNaN(miktar) || miktar <= 0) {
             alert("Geçersiz miktar.");
         } else if (miktar > (veri.kg + 0.001)) {

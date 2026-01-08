@@ -8,18 +8,26 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     
     <style>
-        :root { --primary: #1a73e8; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --info: #17a2b8; --dark: #1e293b; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 20px; }
-        .container { max-width: 1600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        :root { 
+            --primary: #1a73e8; 
+            --success: #28a745; 
+            --danger: #dc3545; 
+            --warning: #ffc107; 
+            --info: #17a2b8; 
+            --dark: #1e293b;
+            --bg-soft: #f1f3f5;
+        }
         
+        body { font-family: 'Segoe UI', sans-serif; background: #dfe4ea; margin: 20px; }
+        .container { max-width: 1600px; margin: auto; background: var(--bg-soft); padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
         #connStatus { padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; float: right; }
         .online { background: #d4edda; color: #155724; }
         .offline { background: #f8d7da; color: #721c24; }
 
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; clear: both; }
-        input, select, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 100%; box-sizing: border-box; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ced4da; clear: both; }
+        input, select, textarea { padding: 10px; border: 1px solid #adb5bd; border-radius: 6px; width: 100%; box-sizing: border-box; background: #ffffff; }
         
-        button { padding: 8px 10px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; display: inline-flex; align-items: center; gap: 5px; justify-content: center; font-size: 11px; }
+        button { padding: 8px 12px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; display: inline-flex; align-items: center; gap: 5px; justify-content: center; font-size: 12px; }
         .btn-add { background: var(--success); color: white; font-size: 14px; }
         .btn-status-action { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
         .btn-status-complete { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
@@ -29,20 +37,27 @@
         .btn-report { background: var(--dark); color: white; }
         .btn-del { background: var(--danger); color: white; }
 
-        .filter-container { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid #ddd; }
+        .filter-container { background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid #ced4da; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: var(--dark); color: white; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; background: #ffffff; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
+        th { background: var(--dark); color: white; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
         
-        /* GÜNCELLENEN KUTUCUK STİLLERİ */
-        .badge-kilo { padding: 6px 10px; border-radius: 4px; color: white; font-weight: normal; display: inline-block; min-width: 80px; text-align: center; }
-        .siparis-kilo-ozel { background-color: var(--success); } /* Yeşil Kutu */
-        .sevk-kilo-ozel { background-color: var(--primary); }    /* Mavi Kutu */
-        .kalan-pozitif { background-color: var(--danger); }     /* Kırmızı Kutu */
-        .kalan-sifir { background-color: #6c757d; }              /* Bitenler için Gri Kutu */
+        /* Satır Tıklama Efekti */
+        .order-row { cursor: pointer; transition: background 0.2s; }
+        .order-row:hover { background-color: #f8f9fa; }
+        
+        /* İşlem Paneli Alanı */
+        .action-panel { display: none; background: #fdfdfd; border-left: 5px solid var(--primary); }
+        .action-content { padding: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
-        .status-badge { padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .badge-kilo { padding: 6px 10px; border-radius: 4px; color: white; font-weight: normal; display: inline-block; min-width: 90px; text-align: center; }
+        .siparis-kilo-ozel { background-color: var(--success); } 
+        .sevk-kilo-ozel { background-color: var(--primary); }    
+        .kalan-pozitif { background-color: var(--danger); }     
+        .kalan-sifir { background-color: #6c757d; }              
+
+        .status-badge { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
         .beklemede { background: #fff3cd; color: #856404; }
         .üretiliyor { background: #cce5ff; color: #004085; }
         .bitti { background: #d4edda; color: #155724; }
@@ -75,6 +90,7 @@
             <option value="ÜRETİLİYOR">⚙️ ÜRETİMDEKİLER</option>
             <option value="BITTI">✅ BİTENLER</option>
         </select>
+        <small style="color: #666; margin-left: auto;">* İşlemleri görmek için satıra tıklayın.</small>
     </div>
 
     <table>
@@ -87,7 +103,6 @@
                 <th>Sevk Edilen (KG)</th>
                 <th>Kalan Sipariş (KG)</th>
                 <th>Durum</th>
-                <th class="no-print" style="text-align: center; width: 480px;">İşlemler</th>
             </tr>
         </thead>
         <tbody id="siparisTable"></tbody>
@@ -137,6 +152,10 @@
     let tumSiparisler = [];
     let aktifID = null;
 
+    function fNum(num) {
+        return (parseFloat(num) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     db.ref(".info/connected").on("value", (snap) => {
         const el = document.getElementById('connStatus');
         if (snap.val() === true) { el.innerText = "● BULUT AKTİF"; el.className = "online"; }
@@ -170,34 +189,62 @@
             const sevkKG = parseFloat(s.sevk) || 0;
             const kalanKG = sipKG - sevkKG;
 
-            table.innerHTML += `
-                <tr>
-                    <td><strong>${s.firma}</strong></td>
-                    <td>${s.kumas}</td>
-                    <td>${s.gramaj || '-'}</td>
-                    <td><span class="badge-kilo siparis-kilo-ozel">${sipKG.toFixed(2)} KG</span></td>
-                    <td><span class="badge-kilo sevk-kilo-ozel">${sevkKG.toFixed(2)} KG</span></td>
-                    <td><span class="badge-kilo ${kalanKG > 0 ? 'kalan-pozitif' : 'kalan-sifir'}">${kalanKG.toFixed(2)} KG</span></td>
-                    <td><span class="status-badge ${s.durum.toLowerCase()}">${s.durum}</span></td>
-                    <td class="no-print" style="text-align: right; display: flex; gap: 4px; justify-content: flex-end;">
-                        <button class="btn-status-action" onclick="durumDegistir('${s.id}', 'ÜRETİLİYOR')">⚙️ Üretim</button>
-                        <button class="btn-status-complete" onclick="durumDegistir('${s.id}', 'BITTI')">✅ BİTTİ</button>
-                        <button class="btn-sevk" onclick="sevkAc('${s.id}')">📦 Sevk Yap</button>
-                        <button class="btn-edit" onclick="duzenleAc('${s.id}')">✏️ Güncelle</button>
-                        <button class="btn-note" onclick="notAc('${s.id}')">📋 Not</button>
-                        <button class="btn-report" onclick="raporHazirla('${s.id}')">🖨️ Yazdır</button>
-                        <button class="btn-del" onclick="sil('${s.id}')">🗑️</button>
-                    </td>
-                </tr>
+            // Ana Satır
+            const tr = document.createElement('tr');
+            tr.className = "order-row";
+            tr.onclick = () => toggleActions(s.id);
+            tr.innerHTML = `
+                <td><strong>${s.firma}</strong></td>
+                <td>${s.kumas}</td>
+                <td>${s.gramaj || '-'}</td>
+                <td><span class="badge-kilo siparis-kilo-ozel">${fNum(sipKG)} KG</span></td>
+                <td><span class="badge-kilo sevk-kilo-ozel">${fNum(sevkKG)} KG</span></td>
+                <td><span class="badge-kilo ${kalanKG > 0 ? 'kalan-pozitif' : 'kalan-sifir'}">${fNum(kalanKG)} KG</span></td>
+                <td><span class="status-badge ${s.durum.toLowerCase()}">${s.durum}</span></td>
             `;
+
+            // İşlem Paneli Satırı (Gizli)
+            const actionTr = document.createElement('tr');
+            actionTr.id = "actions-" + s.id;
+            actionTr.className = "action-panel no-print";
+            actionTr.innerHTML = `
+                <td colspan="7">
+                    <div class="action-content">
+                        <span style="font-weight:bold; color:var(--dark); margin-right:10px;">İŞLEMLER:</span>
+                        <button class="btn-status-action" onclick="durumDegistir('${s.id}', 'ÜRETİLİYOR')">⚙️ ÜRETİME AL</button>
+                        <button class="btn-status-complete" onclick="durumDegistir('${s.id}', 'BITTI')">✅ BİTTİ YAP</button>
+                        <button class="btn-sevk" onclick="sevkAc('${s.id}')">📦 SEVKIYAT GİR</button>
+                        <button class="btn-edit" onclick="duzenleAc('${s.id}')">✏️ DÜZENLE</button>
+                        <button class="btn-note" onclick="notAc('${s.id}')">📋 NOTLAR</button>
+                        <button class="btn-report" onclick="raporHazirla('${s.id}')">🖨️ YAZDIR</button>
+                        <button class="btn-del" onclick="sil('${s.id}')">🗑️ SİL</button>
+                    </div>
+                </td>
+            `;
+
+            table.appendChild(tr);
+            table.appendChild(actionTr);
         });
     }
 
+    // Satıra tıklandığında buton panelini aç/kapat
+    function toggleActions(id) {
+        const panel = document.getElementById("actions-" + id);
+        const isVisible = panel.style.display === "table-row";
+        
+        // Diğer açık panelleri kapat (opsiyonel, daha temiz görünüm sağlar)
+        document.querySelectorAll('.action-panel').forEach(p => p.style.display = "none");
+        
+        // Tıklananı aç veya kapat
+        panel.style.display = isVisible ? "none" : "table-row";
+    }
+
+    // Mevcut Fonksiyonlar (Aynı Bırakıldı)
     function sevkAc(id) {
         aktifID = id;
         const s = tumSiparisler.find(x => x.id === id);
         document.getElementById('sevkBilgi').innerText = s.firma + " - " + s.kumas;
-        document.getElementById('mevcutSevkBilgi').innerText = "Toplam Sevk Edilen: " + (s.sevk || 0).toFixed(2) + " KG";
+        document.getElementById('mevcutSevkBilgi').innerText = "Toplam Sevk Edilen: " + fNum(s.sevk || 0) + " KG";
         document.getElementById('sevkMiktarInput').value = "";
         document.getElementById('sevkModal').style.display = 'block';
         document.getElementById('overlay').style.display = 'block';
@@ -272,9 +319,7 @@
         const s = tumSiparisler.find(x => x.id === id);
         const tarih = new Date().toLocaleDateString('tr-TR');
         const sip = parseFloat(s.miktar) || 0;
-        
         const rWindow = window.open('', '', 'width=900,height=850');
-        
         rWindow.document.write(`
             <html><head><title>Örme Talimatı</title><style>
                 body { font-family: sans-serif; padding: 40px; color:#000; }
@@ -288,21 +333,17 @@
                 @media print { body { padding: 0; } }
             </style></head><body>
                 <div class="h"><h1>MAKROTEKS KUMAŞÇILIK ÖRME TALİMATI</h1> <span style="font-size:18px;">${tarih}</span></div>
-                
                 <div class="r"><div class="l">Firma:</div><div class="val">${s.firma}</div></div>
                 <div class="r"><div class="l">Kumaş Cinsi:</div><div class="val">${s.kumas}</div></div>
                 <div class="r"><div class="l">Gramaj:</div><div class="val">${s.gramaj || '-'}</div></div>
-                
                 <div style="margin-top: 30px;">
                     <div style="font-size: 20px; font-weight: bold;">TOPLAM SİPARİŞ MİKTARI:</div>
-                    <div class="buyuk-miktar">${sip.toFixed(2)} KG</div>
+                    <div class="buyuk-miktar">${fNum(sip)} KG</div>
                 </div>
-
                 <div class="n">
                     <h3 style="margin-top:0;">ÖRME & SİPARİŞ NOTLARI</h3>
                     <p style="white-space:pre-wrap; font-size:18px;">${s.not || 'Not bulunmuyor.'}</p>
                 </div>
-
                 <script>
                     window.onload = function() {
                         window.print();
