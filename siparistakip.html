@@ -43,11 +43,9 @@
         th, td { padding: 15px 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
         th { background: var(--dark); color: white; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
         
-        /* Satır Tıklama Efekti */
         .order-row { cursor: pointer; transition: background 0.2s; }
         .order-row:hover { background-color: #f8f9fa; }
         
-        /* İşlem Paneli Alanı */
         .action-panel { display: none; background: #fdfdfd; border-left: 5px solid var(--primary); }
         .action-content { padding: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
@@ -66,6 +64,10 @@
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
         
         @media print { .no-print { display: none !important; } }
+
+        /* Yeni Eklenen Düzenle Alanı Stilleri */
+        .edit-calc-area { background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border: 1px dashed #ccc; }
+        .edit-calc-row { display: flex; gap: 5px; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -124,8 +126,19 @@
     <label>Firma</label><input type="text" id="editFirma" style="margin-bottom:8px;">
     <label>Kumaş</label><input type="text" id="editKumas" style="margin-bottom:8px;">
     <label>Gramaj</label><input type="text" id="editGramaj" style="margin-bottom:8px;">
-    <label>Sipariş KG</label><input type="number" id="editMiktar" style="margin-bottom:20px;">
-    <button class="btn-add" onclick="guncelle()" style="width:100%">BİLGİLERİ KAYDET</button>
+    
+    <div class="edit-calc-area">
+        <label>Sipariş KG (Mevcut)</label>
+        <input type="number" id="editMiktar" style="background: #e9ecef; font-weight: bold;">
+        
+        <div class="edit-calc-row">
+            <input type="number" id="editMiktarIslem" placeholder="Eklenecek/Düşecek Miktar" step="0.01">
+            <button class="btn-add" onclick="miktarHesapla('ekle')" style="background: var(--success);">➕ EKLE</button>
+            <button class="btn-add" onclick="miktarHesapla('dus')" style="background: var(--danger);">➖ DÜŞÜR</button>
+        </div>
+    </div>
+
+    <button class="btn-add" onclick="guncelle()" style="width:100%; margin-top:10px;">BİLGİLERİ KAYDET</button>
 </div>
 
 <div class="modal" id="notModal">
@@ -189,7 +202,6 @@
             const sevkKG = parseFloat(s.sevk) || 0;
             const kalanKG = sipKG - sevkKG;
 
-            // Ana Satır
             const tr = document.createElement('tr');
             tr.className = "order-row";
             tr.onclick = () => toggleActions(s.id);
@@ -203,7 +215,6 @@
                 <td><span class="status-badge ${s.durum.toLowerCase()}">${s.durum}</span></td>
             `;
 
-            // İşlem Paneli Satırı (Gizli)
             const actionTr = document.createElement('tr');
             actionTr.id = "actions-" + s.id;
             actionTr.className = "action-panel no-print";
@@ -227,19 +238,13 @@
         });
     }
 
-    // Satıra tıklandığında buton panelini aç/kapat
     function toggleActions(id) {
         const panel = document.getElementById("actions-" + id);
         const isVisible = panel.style.display === "table-row";
-        
-        // Diğer açık panelleri kapat (opsiyonel, daha temiz görünüm sağlar)
         document.querySelectorAll('.action-panel').forEach(p => p.style.display = "none");
-        
-        // Tıklananı aç veya kapat
         panel.style.display = isVisible ? "none" : "table-row";
     }
 
-    // Mevcut Fonksiyonlar (Aynı Bırakıldı)
     function sevkAc(id) {
         aktifID = id;
         const s = tumSiparisler.find(x => x.id === id);
@@ -285,8 +290,25 @@
         document.getElementById('editKumas').value = s.kumas;
         document.getElementById('editGramaj').value = s.gramaj;
         document.getElementById('editMiktar').value = s.miktar;
+        document.getElementById('editMiktarIslem').value = "";
         document.getElementById('editModal').style.display = 'block';
         document.getElementById('overlay').style.display = 'block';
+    }
+
+    // YENİ EKLE VE DÜŞÜR HESAPLAMA FONKSİYONU
+    function miktarHesapla(tip) {
+        let mevcut = parseFloat(document.getElementById('editMiktar').value) || 0;
+        let islem = parseFloat(document.getElementById('editMiktarIslem').value) || 0;
+        
+        if(islem <= 0) return alert("Lütfen geçerli bir miktar giriniz.");
+        
+        if(tip === 'ekle') {
+            document.getElementById('editMiktar').value = (mevcut + islem).toFixed(2);
+        } else {
+            if(mevcut - islem < 0) return alert("Sipariş miktarı 0'ın altına düşemez!");
+            document.getElementById('editMiktar').value = (mevcut - islem).toFixed(2);
+        }
+        document.getElementById('editMiktarIslem').value = ""; // Kutuyu temizle
     }
 
     function guncelle() {
