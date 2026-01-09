@@ -3,314 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS ERP v4.3</title>
+    <title>Giriş - MAKROTEKS ERP</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --sidebar-bg: #1e293b; 
-            --sidebar-hover: #334155;
-            --main-bg: #334155; 
+            --main-bg: #0f172a;
+            --card-bg: #1e293b;
             --accent: #3b82f6;
-            --text-light: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #475569;
-            --currency-bg: rgba(30, 41, 59, 0.7);
+            --text-white: #ffffff;
         }
-
         body {
-            font-family: 'Inter', 'Segoe UI', sans-serif;
-            margin: 0;
+            font-family: 'Inter', sans-serif;
             background-color: var(--main-bg);
-            height: 100vh;
-            display: flex;
-            color: white;
-            overflow: hidden;
+            height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0;
         }
-
-        /* Yan Menü Tasarımı */
-        .sidebar {
-            width: 260px;
-            background-color: var(--sidebar-bg);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2);
-            z-index: 100;
-            border-right: 1px solid var(--border-color);
+        .login-card {
+            background: var(--card-bg); padding: 40px; border-radius: 20px;
+            width: 100%; max-width: 380px; border: 1px solid #334155; text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
         }
-
-        .sidebar-header {
-            padding: 25px 20px;
-            text-align: center;
-            border-bottom: 1px solid var(--sidebar-hover);
+        .logo { font-size: 1.8rem; font-weight: 900; color: var(--accent); margin-bottom: 5px; letter-spacing: 1px; }
+        .subtitle { color: #94a3b8; margin-bottom: 30px; font-size: 0.85rem; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #cbd5e1; }
+        .input-group input {
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155;
+            background: #0f172a; color: white; box-sizing: border-box; outline: none; transition: 0.3s;
         }
-
-        .sidebar-header h2 {
-            color: white;
-            font-size: 15px;
-            margin: 0;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
+        .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .login-btn {
+            width: 100%; padding: 14px; background: var(--accent); color: white;
+            border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;
         }
-
-        .menu-group {
-            padding: 10px 0;
-            flex-grow: 1;
-            overflow-y: auto;
-        }
-
-        /* Kaydırma Çubuğu */
-        .menu-group::-webkit-scrollbar { width: 5px; }
-        .menu-group::-webkit-scrollbar-thumb { background: var(--border-color); }
-
-        .menu-label {
-            padding: 20px 25px 10px;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--accent);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .nav-button {
-            display: flex;
-            align-items: center;
-            padding: 12px 25px;
-            color: #cbd5e1;
-            text-decoration: none;
-            transition: all 0.2s;
-            border: none;
-            background: none;
-            width: 100%;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            border-left: 4px solid transparent;
-            text-align: left;
-        }
-
-        .nav-button i {
-            width: 20px;
-            margin-right: 15px;
-            font-size: 18px;
-            color: #64748b;
-        }
-
-        .nav-button:hover {
-            background-color: var(--sidebar-hover);
-            color: white;
-            border-left: 4px solid var(--accent);
-        }
-
-        /* Ana İçerik Alanı */
-        .main-wrapper {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--main-bg);
-        }
-
-        .top-nav {
-            height: 60px;
-            background-color: rgba(30, 41, 59, 0.5);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 30px;
-        }
-
-        .nav-left { display: flex; align-items: center; gap: 20px; }
-        .nav-right { display: flex; align-items: center; gap: 20px; }
-
-        .currency-box {
-            display: flex;
-            gap: 15px;
-            font-size: 13px;
-            font-weight: 600;
-            background: var(--currency-bg);
-            padding: 5px 15px;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-        }
-
-        .currency-item { display: flex; align-items: center; gap: 5px; }
-        .usd-color { color: #10b981; }
-        .eur-color { color: #f59e0b; }
-
-        .breadcrumb { font-size: 13px; color: #cbd5e1; }
-
-        .content-area {
-            flex-grow: 1;
-            position: relative;
-        }
-
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background-color: white;
-        }
-
-        .welcome-screen {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            width: 100%;
-        }
-
-        .logo-box {
-            width: 120px;
-            height: 120px;
-            background: var(--sidebar-bg);
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 2px solid var(--accent);
-        }
-
-        .logo-box i { font-size: 60px; color: var(--accent); }
-
-        .welcome-screen h1 {
-            font-size: 28px;
-            margin: 10px 0;
-            letter-spacing: 2px;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .welcome-screen p { color: var(--text-muted); font-size: 16px; }
-
-        #currentTime { color: white; font-size: 13px; opacity: 0.8; }
+        .login-btn:hover { background: #2563eb; transform: translateY(-1px); }
+        #error-msg { color: #ef4444; font-size: 0.85rem; margin-top: 15px; display: none; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 5px; }
     </style>
 </head>
 <body>
-
-    <nav class="sidebar">
-        <div class="sidebar-header">
-            <i class="fas fa-industry" style="color: var(--accent); font-size: 24px; margin-bottom: 10px;"></i>
-            <h2>MAKROTEKS ERP</h2>
-        </div>
-        <div class="menu-group">
-            <div class="menu-label">Lojistik & Depo</div>
-            <button class="nav-button" onclick="loadPage('siparistakip.html', 'Sipariş Takip')">
-                <i class="fas fa-truck-moving"></i> Sipariş Takip
-            </button>
-            <button class="nav-button" onclick="loadPage('depostok.html', 'Depo Stok')">
-                <i class="fas fa-warehouse"></i> Depo Stok
-            </button>
-            <button class="nav-button" onclick="loadPage('kumasstok.html', 'Kumaş Takip')">
-                <i class="fas fa-scroll"></i> Kumaş Takip
-            </button>
-
-            <div class="menu-label">İnsan Kaynakları</div>
-            <button class="nav-button" onclick="loadPage('personel.html', 'Personel Yönetimi', true)">
-                <i class="fas fa-users-gear"></i> Personel Kartları
-            </button>
-            <button class="nav-button" onclick="loadPage('puantaj.html', 'Puantaj Kayıt')">
-                <i class="fas fa-stopwatch"></i> Puantaj
-            </button>
-            <button class="nav-button" onclick="loadPage('igne.html', 'İğne Takibi')">
-                <i class="fas fa-tools"></i> İğne Takip
-            </button>
-
-            <div class="menu-label">Maliyet & Muhasebe</div>
-            <button class="nav-button" onclick="loadPage('oran.html', 'İplik Oran Hesaplama')">
-                <i class="fas fa-percentage"></i> İplik Oran
-            </button>
-            <button class="nav-button" onclick="loadPage('maliyet.html', 'Kumaş Maliyet Hesabı')">
-                <i class="fas fa-file-invoice-dollar"></i> Maliyet Hesabı
-            </button>
-            <button class="nav-button" onclick="loadPage('kumasraporlari.html', 'Kumaş Raporları')">
-                <i class="fas fa-file-contract"></i> Kumaş Raporları
-            </button>
-            <button class="nav-button" onclick="loadPage('giderler.html', 'Gider Yönetimi', true)">
-                <i class="fas fa-wallet"></i> Gider Takibi
-            </button>
-        </div>
-    </nav>
-
-    <main class="main-wrapper">
-        <header class="top-nav">
-            <div class="nav-left">
-                <div class="breadcrumb" id="currentPageName">Yönetim Paneli / Genel Bakış</div>
+    <div class="login-card">
+        <div class="logo">MAKROTEKS ERP</div>
+        <div class="subtitle">Bulut Yönetim Sistemi Girişi</div>
+        <form id="loginForm">
+            <div class="input-group">
+                <label><i class="fas fa-user"></i> Kullanıcı Adı</label>
+                <input type="text" id="username" placeholder="makro..." required>
             </div>
-            <div class="nav-right">
-                <div class="currency-box">
-                    <div class="currency-item">
-                        <span class="usd-color">USD:</span>
-                        <span id="usdRate">...</span>
-                    </div>
-                    <div class="currency-item">
-                        <span class="eur-color">EUR:</span>
-                        <span id="eurRate">...</span>
-                    </div>
-                </div>
-                <div id="currentTime"></div>
+            <div class="input-group">
+                <label><i class="fas fa-lock"></i> Şifre</label>
+                <input type="password" id="password" placeholder="••••" required>
             </div>
-        </header>
-
-        <section class="content-area">
-            <div id="welcome" class="welcome-screen">
-                <div class="logo-box">
-                    <i class="fas fa-microchip"></i>
-                </div>
-                <h1>MAKROTEKS YÖNETİM SİSTEMİ</h1>
-                <p>Modül seçimi yaparak işlemlere başlayabilirsiniz.</p>
-            </div>
-            <iframe id="mainFrame" style="display: none;"></iframe>
-        </section>
-    </main>
+            <button type="submit" class="login-btn">SİSTEME GİRİŞ</button>
+            <div id="error-msg">Bilgiler hatalı, lütfen kontrol edin.</div>
+        </form>
+    </div>
 
     <script>
-        async function fetchRates() {
-            try {
-                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-                const data = await response.json();
-                const usdToTry = data.rates.TRY;
-                
-                const eurResponse = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
-                const eurData = await eurResponse.json();
-                const eurToTry = eurData.rates.TRY;
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const err = document.getElementById('error-msg');
 
-                document.getElementById('usdRate').innerText = usdToTry.toFixed(2) + " ₺";
-                document.getElementById('eurRate').innerText = eurToTry.toFixed(2) + " ₺";
-            } catch (error) {
-                document.getElementById('usdRate').innerText = "Hata";
-                document.getElementById('eurRate').innerText = "Hata";
+            // Sizin istediğiniz bilgiler
+            if (u === "makroerp" && p === "1923") {
+                sessionStorage.setItem('isLoggedIn', 'true'); // Basit oturum kontrolü
+                window.location.href = "dashboard.html"; // Panel dosyasına yönlendir
+            } else {
+                err.style.display = "block";
+                setTimeout(() => { err.style.display = "none"; }, 3000);
             }
-        }
-
-        // Şifre kontrolü bu fonksiyonda gerçekleşir
-        function loadPage(url, title, password = false) {
-            if (password) {
-                const pass = prompt("Yetkili şifresini giriniz:");
-                if (pass !== "1308") { 
-                    alert("Yetkisiz erişim!"); 
-                    return; 
-                }
-            }
-            document.getElementById('welcome').style.display = 'none';
-            const frame = document.getElementById('mainFrame');
-            frame.style.display = 'block';
-            frame.src = url;
-            document.getElementById('currentPageName').innerHTML = title;
-        }
-
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('currentTime').innerText = now.toLocaleString('tr-TR');
-        }
-
-        setInterval(updateTime, 1000);
-        setInterval(fetchRates, 3600000);
-        updateTime();
-        fetchRates();
+        });
     </script>
 </body>
 </html>

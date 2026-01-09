@@ -3,228 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS Puantaj v11 - Daraltılmış</title>
+    <title>MAKROTEKS Puantaj - Bulut Sistemi</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
     <style>
-        :root { --border: #000; --gelmedi: #e74c3c; --tick: #000080; --mavi: #007bff; --yesil: #28a745; --bordo: #800000; }
+        :root { --border: #000; --gelmedi: #e74c3c; --tick: #000080; --mavi: #007bff; --yesil: #28a745; }
         body { font-family: 'Calibri', 'Arial', sans-serif; background: #fff; margin: 0; padding: 5px; color: #000; }
-        
         .container { width: 100%; display: flex; flex-direction: column; align-items: center; }
-        h2 { text-align: center; font-size: 14px; margin: 5px 0; font-weight: bold; text-decoration: underline; text-transform: uppercase; }
-
-        .no-print { 
-            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; 
-            background: #f4f4f4; padding: 8px; border: 1px solid #ccc; border-radius: 4px; align-items: center; width: fit-content;
-        }
+        h2 { text-align: center; font-size: 16px; margin: 10px 0; font-weight: bold; text-decoration: underline; text-transform: uppercase; }
+        .no-print { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; background: #f4f4f4; padding: 10px; border: 1px solid #ccc; border-radius: 4px; align-items: center; }
         
-        input { padding: 3px; border: 1px solid #999; font-size: 12px; }
-        .btn { padding: 3px 10px; cursor: pointer; border: 1px solid #333; font-weight: bold; font-size: 12px; }
-        .btn-add { background: #e1e1e1; }
-        .btn-print { background: #333; color: white; }
-
-        .price-box { background: #fff; border: 2px solid var(--yesil); padding: 3px 8px; border-radius: 5px; display: flex; align-items: center; gap: 5px; }
-
-        .table-wrapper { width: 100%; display: flex; justify-content: center; overflow-x: auto; }
-        table { border-collapse: collapse; table-layout: fixed; border: 1.2px solid #000; margin: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; table-layout: fixed; }
+        th, td { border: 1px solid var(--border); padding: 2px; text-align: center; font-size: 11px; overflow: hidden; }
+        th { background: #f2f2f2; font-weight: bold; }
         
-        th, td { border: 1px solid var(--border); padding: 0; text-align: center; vertical-align: middle; box-sizing: border-box; height: 22px; }
+        .name-col { width: 150px; text-align: left; padding-left: 5px; font-weight: bold; white-space: nowrap; }
+        .day-cell { cursor: pointer; font-weight: bold; width: 25px; }
+        .present { color: var(--tick); background: #e2f0d9; }
+        .absent { color: var(--gelmedi); background: #fbe5d6; }
+        .summary-col { background: #fff2cc; font-weight: bold; width: 40px; }
+        .calc-col { background: #deebf7; width: 60px; }
+        .calc-input { width: 90%; border: none; background: transparent; text-align: center; font-weight: bold; }
         
-        th { background: var(--mavi) !important; color: white !important; font-weight: bold; font-size: 9px; }
+        button { padding: 5px 10px; cursor: pointer; font-weight: bold; }
+        .btn-ekle { background: var(--yesil); color: white; border: none; }
+        .btn-sil { background: var(--gelmedi); color: white; border: none; padding: 2px 5px; }
         
-        .name-col { text-align: left; padding-left: 5px; width: 160px; font-weight: bold; font-size: 11px; background-color: #f2f2f2 !important; color: #000 !important; }
-        
-        th.green-head { background: var(--yesil) !important; }
-        th.bordo-head { background: var(--bordo) !important; color: white; }
-
-        .day-cell { cursor: pointer; width: 22px !important; font-size: 10px; background-color: #fff; }
-        
-        .present { color: var(--tick) !important; font-size: 14px; font-weight: 900; } 
-        .absent { color: var(--gelmedi) !important; font-size: 13px; font-weight: 900; } 
-        
-        /* GÜN SAYISI SÜTUNU: 14 punto, Kalın, Siyah ve Açık Gri Arka Plan */
-        .summary-col { 
-            background: #f2f2f2 !important; 
-            color: #000 !important; 
-            font-weight: bold !important; 
-            width: 35px; 
-            font-size: 14px !important; 
-        }
-
-        .calc-col { width: 55px; background: var(--yesil) !important; color: white; font-weight: bold; font-size: 11px; }
-        .calc-input { width: 100%; border: none; text-align: center; background: transparent; font-weight: bold; height: 20px; color: white; font-size: 11px; }
-        
-        .action-col { width: 30px; border: 1px solid var(--border) !important; background-color: #fff; }
-        .btn-sil { color: var(--bordo); border: none; background: none; cursor: pointer; font-size: 16px; font-weight: bold; line-height: 1; }
-
-        .note-container { width: 95%; max-width: 1000px; margin-top: 10px; border: 1.2px solid var(--border); padding: 5px; }
-        textarea { width: 100%; border: none; outline: none; resize: none; font-size: 12px; min-height: 40px; }
-
-        @media print {
-            .no-print, .action-col, .bordo-head { display: none !important; }
-            th { background-color: #007bff !important; color: white !important; -webkit-print-color-adjust: exact; }
-            .name-col { background-color: #f2f2f2 !important; color: black !important; -webkit-print-color-adjust: exact; }
-            .summary-col { background-color: #f2f2f2 !important; color: black !important; -webkit-print-color-adjust: exact; }
-            .green-head, .calc-col { background-color: #28a745 !important; color: white !important; -webkit-print-color-adjust: exact; }
-        }
+        @media print { .no-print { display: none !important; } body { margin: 0; padding: 0; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 id="baslik">PERSONEL PUANTAJ VE MAKİNA FARKI LİSTESİ</h2>
+    <h2>MAKROTEKS PERSONEL PUANTAJ VE ÜRETİM TAKİBİ</h2>
 
     <div class="no-print">
-        <input type="text" id="p_name" placeholder="Personel Adı" style="width: 150px;">
-        <button class="btn btn-add" onclick="personelEkle()">EKLE</button>
-        <input type="month" id="selectedMonth" onchange="verileriYukle()">
-        
-        <div class="price-box">
-            <strong style="font-size:11px; color:var(--yesil)">MAKİNA BİRİM:</strong>
-            <input type="number" id="unitPrice" value="0" step="0.01" style="width: 60px;" oninput="hesaplaHepsini()">
-        </div>
-
-        <button class="btn btn-print" onclick="window.print()">🖨️ YAZDIR</button>
+        <select id="aySecici" onchange="listele()"></select>
+        <input type="text" id="p_ad" placeholder="Personel Adı Soyadı">
+        <button class="btn-ekle" onclick="pEkle()">PERSONEL EKLE</button>
+        <button onclick="window.print()" style="background:#555; color:white; border:none;">YAZDIR (PDF)</button>
+        <div id="connStatus" style="color: green; font-size: 12px; margin-left: 10px;">● Bulut Aktif</div>
     </div>
 
-    <div class="table-wrapper">
-        <table id="puantajTable">
-            <thead>
-                <tr id="headerRow"></tr>
-            </thead>
-            <tbody id="puantajBody"></tbody>
-        </table>
-    </div>
-
-    <div class="note-container">
-        <strong style="font-size: 12px;">PUANTAJ NOTLARI / AÇIKLAMALAR</strong>
-        <textarea id="aylikNot" placeholder="Not ekle..." oninput="notuKaydet()"></textarea>
-    </div>
+    <table>
+        <thead>
+            <tr id="gunlerRow">
+                <th class="name-col">PERSONEL ADI SOYADI</th>
+                </tr>
+        </thead>
+        <tbody id="pBody"></tbody>
+    </table>
 </div>
 
 <script>
+    // FİREBASE YAPILANDIRMASI
     const firebaseConfig = {
-        apiKey: "AIzaSyAeFLhVyrv4sn4kJmUtusLIOPWwgmKxe5c",
-        authDomain: "kumastakip-6930a.firebaseapp.com",
-        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
-        projectId: "kumastakip-6930a",
-        storageBucket: "kumastakip-6930a.firebasestorage.app",
-        messagingSenderId: "796676836408",
-        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
+        apiKey: "AIzaSyB4zJ0nY_06VnOh-JEmpfhw8EzrvbCiIBA",
+        authDomain: "texerp-ea015.firebaseapp.com",
+        databaseURL: "https://texerp-ea015-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "texerp-ea015",
+        storageBucket: "texerp-ea015.firebasestorage.app",
+        messagingSenderId: "531851332664",
+        appId: "1:531851332664:web:d2af3d69b6241d7fd8eacd"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    
+    // Veri Referansları
+    const personelRef = db.ref("puantaj/personeller");
+    const veriRef = db.ref("puantaj/kayitlar"); // Yoklama ve Makine verileri
 
-    document.getElementById('selectedMonth').value = new Date().toISOString().substring(0, 7);
+    let personeller = {};
+    let tumVeriler = {};
 
-    function personelEkle() {
-        const ad = document.getElementById('p_name').value.trim();
-        if(!ad) return;
-        db.ref('personeller').push({ ad: ad.toUpperCase(), eklemeTarihi: Date.now() });
-        document.getElementById('p_name').value = "";
+    // Sayfa Başlatma
+    window.onload = () => {
+        ay SeciciDoldur();
+        gunleriOlustur();
+        verileriYukle();
+    };
+
+    function aySeciciDoldur() {
+        const secici = document.getElementById('aySecici');
+        const aylar = ["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
+        const d = new Date();
+        const yil = d.getFullYear();
+        
+        for(let i=0; i<12; i++) {
+            let option = document.createElement('option');
+            let ayIndex = (i + 1).toString().padStart(2, '0');
+            option.value = `${yil}-${ayIndex}`;
+            option.text = `${aylar[i]} ${yil}`;
+            if(i === d.getMonth()) option.selected = true;
+            secici.appendChild(option);
+        }
     }
 
-    function yoklamaTetikle(pId, gun) {
-        const ayKey = document.getElementById('selectedMonth').value.replace("-", "_");
-        const ref = db.ref(`puantaj/${ayKey}/${pId}/${gun}`);
-        ref.once('value', snap => {
-            const val = snap.val();
-            if(!val) ref.set("V");
-            else if(val === "V") ref.set("X");
-            else ref.remove();
-        });
-    }
-
-    function makinaKaydet(pId, adet) {
-        const ayKey = document.getElementById('selectedMonth').value.replace("-", "_");
-        db.ref(`makina_farki/${ayKey}/${pId}`).set(adet);
-    }
-
-    function hesaplaHepsini() {
-        const birimFiyat = parseFloat(document.getElementById('unitPrice').value) || 0;
-        const inputs = document.querySelectorAll('.m-adet');
-        inputs.forEach(input => {
-            const pId = input.getAttribute('data-id');
-            const adet = parseFloat(input.value) || 0;
-            const sonuc = adet * birimFiyat;
-            document.getElementById(`tutar-${pId}`).innerText = sonuc.toLocaleString('tr-TR', {minimumFractionDigits: 2}) + " TL";
-        });
-    }
-
-    let saveTimeout;
-    function notuKaydet() {
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(() => {
-            const ayKey = document.getElementById('selectedMonth').value.replace("-", "_");
-            db.ref(`notlar/${ayKey}`).set(document.getElementById('aylikNot').value);
-        }, 1000);
+    function gunleriOlustur() {
+        const row = document.getElementById('gunlerRow');
+        for(let i=1; i<=31; i++) {
+            let th = document.createElement('th');
+            th.innerText = i;
+            th.style.width = "25px";
+            row.appendChild(th);
+        }
+        row.innerHTML += `<th class="summary-col">TOP</th><th class="calc-col">MAKİNA</th><th class="no-print" style="width:30px">SİL</th>`;
     }
 
     function verileriYukle() {
-        const ayStr = document.getElementById('selectedMonth').value;
-        const ayKey = ayStr.replace("-", "_");
-        const [yil, ay] = ayStr.split("-");
-        const gunSayisi = new Date(yil, ay, 0).getDate();
-        
-        const ayIsimler = ["OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN", "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"];
-        document.getElementById('baslik').innerText = `${ayIsimler[parseInt(ay)-1]} ${yil} PUANTAJ VE MAKİNA FARKI`;
+        // Personelleri Dinle
+        personelRef.on("value", (snap) => {
+            personeller = snap.val() || {};
+            listele();
+        });
 
-        db.ref(`notlar/${ayKey}`).once('value', snap => { document.getElementById('aylikNot').value = snap.val() || ""; });
-
-        const headerRow = document.getElementById('headerRow');
-        headerRow.innerHTML = `<th class="name-col" style="text-align:center">PERSONEL ADI</th>`;
-        for(let i=1; i<=gunSayisi; i++) { 
-            headerRow.innerHTML += `<th class="day-cell" style="background:var(--mavi); color:white;">${i}</th>`; 
-        }
-        /* Başlık kısmındaki GÜN hücresi de açık gri yapıldı */
-        headerRow.innerHTML += `<th class="summary-col" style="background:#f2f2f2 !important; color:#000 !important;">GÜN</th>`;
-        headerRow.innerHTML += `<th class="calc-col green-head">MAKİNA</th>`;
-        headerRow.innerHTML += `<th class="calc-col green-head" style="width:70px">TUTAR</th>`;
-        headerRow.innerHTML += `<th class="no-print bordo-head">SİL</th>`;
-
-        db.ref('personeller').on('value', pSnap => {
-            db.ref(`puantaj/${ayKey}`).on('value', puSnap => {
-                db.ref(`makina_farki/${ayKey}`).on('value', mSnap => {
-                    const personeller = pSnap.val() || {};
-                    const yoklamalar = puSnap.val() || {};
-                    const makinalar = mSnap.val() || {};
-                    const body = document.getElementById('puantajBody');
-                    body.innerHTML = "";
-
-                    const siraliKeys = Object.keys(personeller).sort((a,b) => (personeller[a].eklemeTarihi || 0) - (personeller[b].eklemeTarihi || 0));
-
-                    siraliKeys.forEach((pId, index) => {
-                        const p = personeller[pId];
-                        const p_yoklama = yoklamalar[pId] || {};
-                        const m_adet = makinalar[pId] || 0;
-                        let toplamGun = 0;
-
-                        let rowHtml = `<tr><td class="name-col">${index + 1}. ${p.ad}</td>`;
-                        for(let i=1; i<=gunSayisi; i++) {
-                            const durum = p_yoklama[i];
-                            let content = "";
-                            let cls = "day-cell";
-                            if(durum === "V") { content = "✓"; cls += " present"; toplamGun++; }
-                            else if(durum === "X") { content = "X"; cls += " absent"; }
-                            
-                            rowHtml += `<td class="${cls}" onclick="yoklamaTetikle('${pId}', ${i})">${content}</td>`;
-                        }
-                        rowHtml += `<td class="summary-col">${toplamGun}</td>`;
-                        rowHtml += `<td class="calc-col"><input type="number" class="calc-input m-adet" data-id="${pId}" value="${m_adet}" onchange="makinaKaydet('${pId}', this.value)"></td>`;
-                        rowHtml += `<td class="calc-col" id="tutar-${pId}" style="font-size:10px">0.00 TL</td>`;
-                        rowHtml += `<td class="no-print action-col"><button class="btn-sil" onclick="pSil('${pId}')">×</button></td></tr>`;
-                        body.innerHTML += rowHtml;
-                    });
-                    hesaplaHepsini();
-                });
-            });
+        // Tüm Puantaj Verisini Dinle
+        veriRef.on("value", (snap) => {
+            tumVeriler = snap.val() || {};
+            listele();
         });
     }
 
-    function pSil(id) { if(confirm("Bu personeli silmek istediğinize emin misiniz?")) db.ref('personeller/'+id).remove(); }
-    verileriYukle();
-</script>
+    function pEkle() {
+        const ad = document.getElementById('p_ad').value.trim().toUpperCase();
+        if(!ad) return;
+        personelRef.push({ ad: ad });
+        document.getElementById('p_ad').value = "";
+    }
 
+    function listele() {
+        const ayKey = document.getElementById('aySecici').value;
+        const body = document.getElementById('pBody');
+        body.innerHTML = "";
+
+        Object.keys(personeller).forEach(pId => {
+            let p = personeller[pId];
+            let rowHtml = `<tr><td class="name-col">${p.ad}</td>`;
+            let toplamGun = 0;
+
+            for(let i=1; i<=31; i++) {
+                let durum = (tumVeriler[ayKey] && tumVeriler[ayKey][pId] && tumVeriler[ayKey][pId][i]) ? tumVeriler[ayKey][pId][i] : "";
+                let cls = "day-cell";
+                let content = "";
+                
+                if(durum === "V") { content = "✓"; cls += " present"; toplamGun++; }
+                else if(durum === "X") { content = "X"; cls += " absent"; }
+                
+                rowHtml += `<td class="${cls}" onclick="yoklamaDegistir('${pId}', ${i})">${content}</td>`;
+            }
+
+            let makina = (tumVeriler[ayKey] && tumVeriler[ayKey][pId] && tumVeriler[ayKey][pId]['makina']) ? tumVeriler[ayKey][pId]['makina'] : 0;
+            
+            rowHtml += `<td class="summary-col">${toplamGun}</td>`;
+            rowHtml += `<td class="calc-col"><input type="number" class="calc-input" value="${makina}" onchange="makinaKaydet('${pId}', this.value)"></td>`;
+            rowHtml += `<td class="no-print"><button class="btn-sil" onclick="pSil('${pId}')">×</button></td></tr>`;
+            body.innerHTML += rowHtml;
+        });
+    }
+
+    function yoklamaDegistir(pId, gun) {
+        const ayKey = document.getElementById('aySecici').value;
+        let mevcut = (tumVeriler[ayKey] && tumVeriler[ayKey][pId] && tumVeriler[ayKey][pId][gun]) ? tumVeriler[ayKey][pId][gun] : "";
+        let yeni = mevcut === "V" ? "X" : (mevcut === "X" ? "" : "V");
+        
+        db.ref(`puantaj/kayitlar/${ayKey}/${pId}/${gun}`).set(yeni);
+    }
+
+    function makinaKaydet(pId, deger) {
+        const ayKey = document.getElementById('aySecici').value;
+        db.ref(`puantaj/kayitlar/${ayKey}/${pId}/makina`).set(parseFloat(deger) || 0);
+    }
+
+    function pSil(id) {
+        if(confirm("Bu personeli ve tüm kayıtlarını silmek istediğinize emin misiniz?")) {
+            personelRef.child(id).remove();
+            // Not: Personel silindiğinde o aya ait veriler veritabanında kalır ama listelenmez. 
+            // Tam temizlik için kayitlar altından da silinebilir.
+        }
+    }
+</script>
 </body>
 </html>
