@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İplik Kompozisyon v3.0 - Firebase Bulut Kayıtlı</title>
+    <title>İplik Kompozisyon v5.0 - Gelişmiş Hesaplama</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
     <style>
         :root {
             --primary-color: #007bff;
@@ -14,244 +17,206 @@
             --border-color: #dee2e6;
         }
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: var(--bg-light); color: #343a40; }
-        .container { max-width: 1100px; margin: auto; background: var(--bg-white); padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background-color: var(--bg-light); color: #343a40; }
+        .container { max-width: 1200px; margin: auto; background: var(--bg-white); padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         
         h2 { color: var(--primary-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 10px; margin-top: 30px; }
         
-        .converter-box { display: flex; justify-content: space-around; align-items: center; gap: 30px; padding: 20px; background-color: #e9f2ff; border-radius: 8px; margin-bottom: 20px; }
-        .converter-input { flex: 1; text-align: center; }
-        .converter-input input { width: 90%; padding: 10px; font-size: 1.1em; text-align: center; border: 1px solid var(--border-color); border-radius: 6px; }
+        .converter-box { display: flex; justify-content: space-around; background: #e9ecef; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 1px solid #ced4da; }
+        .conv-input { width: 100px; padding: 8px; border-radius: 5px; border: 1px solid #adb5bd; font-weight: bold; text-align: center; }
 
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; }
-        th, td { border: 1px solid var(--border-color); padding: 10px; text-align: center; }
-        th { background-color: var(--primary-color); color: white; font-size: 0.9em; }
-        input[type="text"], input[type="number"] { width: 95%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { padding: 12px; border: 1px solid var(--border-color); text-align: center; }
+        th { background-color: var(--primary-color); color: white; font-size: 13px; text-transform: uppercase; }
+        input[type="text"], input[type="number"] { width: 90%; padding: 8px; border: 1px solid #ced4da; border-radius: 5px; text-align: center; font-size: 14px; }
+
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; margin: 5px; }
+        .btn-add { background: var(--primary-color); color: white; }
+        .btn-calc { background: var(--accent-color); color: white; font-size: 1.1rem; width: 100%; margin-top: 20px; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-save { background: #6f42c1; color: white; }
+
+        .yuzde-kutusu { font-weight: 800; color: #1e3a8a; background: #dbeafe; padding: 5px; border-radius: 4px; display: block; min-height: 20px; }
+
+        #sonuc-alani { margin-top: 30px; padding: 25px; border: 2px solid var(--accent-color); border-radius: 10px; background-color: #f0fff4; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; background: #fff; margin-bottom: 5px; border-radius: 5px; }
         
-        .total-row td { font-weight: bold; background-color: #d1ecf1; color: #0c5460; }
-
-        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        button { padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.3s; }
-        .btn-add { background-color: var(--accent-color); color: white; }
-        .btn-save { background-color: #17a2b8; color: white; flex: 1; font-size: 1.1em; }
-        .btn-clear { background-color: #dc3545; color: white; }
-        button:hover { opacity: 0.8; }
-
-        .history-section { margin-top: 50px; border-top: 2px dashed #ccc; padding-top: 20px; }
-        .history-card { background: #fdfdfd; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .history-date { font-weight: bold; color: #555; }
-        .history-details { font-size: 0.85em; color: #666; font-style: italic; }
-        .history-actions { display: flex; gap: 10px; }
-        .btn-load { background-color: #f1c40f; color: #333; padding: 5px 15px; }
-        .btn-delete-log { background-color: #e74c3c; color: white; padding: 5px 15px; }
+        #connStatus { float: right; font-size: 12px; color: green; font-weight: bold; }
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>📐 İplik Numara Çevirici</h2>
-    <div class="converter-box">
-        <div class="converter-input">
-            <label>Denye (D)</label>
-            <input type="number" id="input-denye" oninput="convertDenyeToNe()">
-        </div>
-        <div style="font-size: 2em; color: var(--primary-color);">⇆</div>
-        <div class="converter-input">
-            <label>İngiliz Pamuk (Ne)</label>
-            <input type="number" id="input-ne" oninput="convertNeToDenye()">
-        </div>
+    <div id="connStatus">● Bulut Aktif</div>
+    <h1 style="text-align: center; color: var(--primary-color);">İPLİK KOMPOZİSYON HESAPLAMA</h1>
+
+    <div class="converter-box no-print">
+        <div>NE: <input type="number" id="inputNe" class="conv-input" oninput="convert('ne')"></div>
+        <div style="font-size: 24px;">⇄</div>
+        <div>DENYE: <input type="number" id="inputDenye" class="conv-input" oninput="convert('denye')"></div>
     </div>
 
-    <h2>🧵 Kompozisyon Hesaplama</h2>
+    <h2>Kumaş İçeriği (İplikler)</h2>
     <table id="iplik-tablosu">
         <thead>
             <tr>
-                <th>İplik Adı / Tanımı</th>
-                <th>İplik No (Ne)</th>
-                <th>50 May (CM)</th>
-                <th>İğne Sayısı (Adet)</th>
-                <th>Oran %</th>
-                <th>İşlem</th>
+                <th>İplik Adı (Pamuk, Pes vb.)</th>
+                <th>No (Ne/Denye)</th>
+                <th>CM</th>
+                <th>Sistem Adeti</th>
+                <th>% ORAN</th>
+                <th class="no-print">İşlem</th>
             </tr>
         </thead>
-        <tbody></tbody>
-        <tfoot>
-            <tr class="total-row">
-                <td colspan="4" style="text-align: right;">TOPLAM:</td>
-                <td id="toplam-sarfiyat-yuzdesi">0.00 %</td>
-                <td></td>
-            </tr>
-        </tfoot>
+        <tbody>
+        </tbody>
     </table>
-
-    <div class="btn-group">
-        <button class="btn-add" onclick="satirEkle()">➕ Yeni Satır</button>
-        <button class="btn-save" onclick="hesaplamayiBulutaKaydet()">☁️ HESAPLAMAYI BULUTA KAYDET</button>
-        <button class="btn-clear" onclick="tabloyuSifirla()">🗑️ Temizle</button>
+    
+    <div class="no-print" style="display:flex; gap:10px; margin-top: 15px;">
+        <button class="btn btn-add" onclick="satirEkle()">+ Yeni İplik Ekle</button>
+        <button class="btn btn-save" onclick="bulutaKaydet()">☁️ Buluta Kaydet</button>
     </div>
 
-    <div class="history-section">
-        <h2>📜 Bulut Kayıt Geçmişi</h2>
-        <div id="gecmis-listesi">Yükleniyor...</div>
+    <button class="btn btn-calc no-print" onclick="hesapla()">HESAPLA VE ANALİZ ET</button>
+
+    <div id="sonuc-alani" style="display:none;">
+        <h3 style="margin-top:0; color: var(--accent-color);">Karışım Analizi:</h3>
+        <div id="sonuc-metni" style="font-size: 1.3rem; line-height: 1.6;"></div>
+        <button class="btn btn-secondary no-print" style="margin-top:20px;" onclick="window.print()">YAZDIR / PDF</button>
     </div>
+
+    <h2 class="no-print">Bulut Kayıt Arşivi</h2>
+    <div id="gecmis-listesi" class="no-print"></div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-
 <script>
-    // Depostok.html'den alınan Firebase Bilgileri
     const firebaseConfig = {
-        apiKey: "AIzaSyAeFLhVyrv4sn4k JmUtusLIOPWwgmKxe5c",
-        authDomain: "kumastakip-6930a.firebaseapp.com",
-        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
-        projectId: "kumastakip-6930a",
-        storageBucket: "kumastakip-6930a.firebasestorage.app",
-        messagingSenderId: "796676836408",
-        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
+        apiKey: "AIzaSyB4zJ0nY_06VnOh-JEmpfhw8EzrvbCiIBA",
+        authDomain: "texerp-ea015.firebaseapp.com",
+        databaseURL: "https://texerp-ea015-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "texerp-ea015"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const oranRef = db.ref('kompozisyon_kayitlari'); // Veriler bu başlıkta toplanacak
+    const oranRef = db.ref("iplik_kompozisyonlari");
 
-    const NE_DENYE_SABITI = 5315;
-    let bulutVerileri = {};
-
-    document.addEventListener('DOMContentLoaded', () => {
-        satirEkle({adi: 'Pamuk Penye 30/1 Ne', num: 30, may: 16, adet: 96});
-        verileriDinle();
-    });
-
-    // Firebase'den verileri canlı çekme
-    function verileriDinle() {
-        oranRef.on('value', (snapshot) => {
-            bulutVerileri = snapshot.val() || {};
-            gecmisiListele();
-        });
+    function convert(type) {
+        const ne = document.getElementById('inputNe');
+        const denye = document.getElementById('inputDenye');
+        if(type === 'ne') denye.value = Math.round(5315 / ne.value);
+        else ne.value = (5315 / denye.value).toFixed(1);
     }
 
-    function satirEkle(v = null) {
+    function satirEkle(veri = {ad: '', no: '', kat: '', oran: ''}) {
         const tbody = document.querySelector('#iplik-tablosu tbody');
-        const row = tbody.insertRow();
-        row.innerHTML = `
-            <td><input type="text" class="iplik-adi" value="${v ? v.adi : ''}" oninput="hesapla()"></td>
-            <td><input type="number" step="0.01" class="iplik-num" value="${v ? v.num : 0}" oninput="hesapla()"></td>
-            <td><input type="number" step="0.001" class="may-cm" value="${v ? v.may : 0}" oninput="hesapla()"></td>
-            <td><input type="number" step="1" class="kullanilan-adet" value="${v ? v.adet : 0}" oninput="hesapla()"></td>
-            <td class="sarfiyat-yuzdesi" style="font-weight:bold;">0.00 %</td>
-            <td><button onclick="this.parentElement.parentElement.remove(); hesapla();" style="background:none; color:red; font-size:1.2em;">✖</button></td>
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="i-ad" value="${veri.ad}" placeholder="Pamuk"></td>
+            <td><input type="number" class="i-no" value="${veri.no}" placeholder="30"></td>
+            <td><input type="number" class="i-kat" value="${veri.kat}" placeholder="30"></td>
+            <td><input type="number" class="i-oran" value="${veri.oran}" placeholder="96"></td>
+            <td><span class="yuzde-kutusu">-</span></td>
+            <td class="no-print"><button class="btn btn-danger" onclick="this.parentElement.parentElement.remove()">SİL</button></td>
         `;
-        hesapla();
+        tbody.appendChild(tr);
     }
 
     function hesapla() {
-        const rows = document.querySelectorAll('#iplik-tablosu tbody tr');
-        let toplamSarfiyat = 0;
-        let veriler = [];
+        const satirlar = document.querySelectorAll('#iplik-tablosu tbody tr');
+        let toplamAgirlik = 0;
+        let bilesenler = [];
 
-        rows.forEach(row => {
-            const num = parseFloat(row.querySelector('.iplik-num').value) || 0;
-            const may = parseFloat(row.querySelector('.may-cm').value) || 0;
-            const adet = parseFloat(row.querySelector('.kullanilan-adet').value) || 0;
-            const sarfiyat = num > 0 ? (may / num) * adet : 0;
-            veriler.push(sarfiyat);
-            toplamSarfiyat += sarfiyat;
+        // Önce ağırlıkları hesapla
+        satirlar.forEach(tr => {
+            const ad = tr.querySelector('.i-ad').value;
+            const no = parseFloat(tr.querySelector('.i-no').value);
+            const cm = parseFloat(tr.querySelector('.i-kat').value); // Eski Kat kolonu CM oldu
+            const sistemAdet = parseFloat(tr.querySelector('.i-oran').value); // Eski Oran kolonu Sistem Adeti oldu
+
+            if (ad && no && sistemAdet && cm) {
+                // Formül: (CM * Sistem Adeti) / İplik Nosu
+                const agirlik = (cm * sistemAdet) / no;
+                toplamAgirlik += agirlik;
+                bilesenler.push({ tr, ad, agirlik });
+            }
         });
 
-        rows.forEach((row, i) => {
-            let yuzde = toplamSarfiyat > 0 ? (veriler[i] / toplamSarfiyat) * 100 : 0;
-            row.querySelector('.sarfiyat-yuzdesi').textContent = yuzde.toFixed(2) + " %";
+        if (bilesenler.length === 0) return alert("Lütfen verileri eksiksiz girin!");
+
+        // Yüzdeleri tabloya ve sonuç alanına yazdır
+        let sonucHTML = "<strong>Kumaş Kompozisyonu:</strong><br><ul style='margin-top:10px;'>";
+        
+        bilesenler.forEach(b => {
+            const yuzde = ((b.agirlik / toplamAgirlik) * 100).toFixed(1);
+            b.tr.querySelector('.yuzde-kutusu').innerText = "% " + yuzde;
+            sonucHTML += `<li>%${yuzde} ${b.ad.toUpperCase()}</li>`;
         });
-        document.getElementById('toplam-sarfiyat-yuzdesi').textContent = (toplamSarfiyat > 0 ? "100.00 %" : "0.00 %");
+        
+        sonucHTML += "</ul>";
+        document.getElementById('sonuc-metni').innerHTML = sonucHTML;
+        document.getElementById('sonuc-alani').style.display = 'block';
     }
 
-    // --- FIREBASE KAYIT ---
-    function hesaplamayiBulutaKaydet() {
-        const rows = document.querySelectorAll('#iplik-tablosu tbody tr');
-        if(rows.length === 0) return;
+    function bulutaKaydet() {
+        const baslik = prompt("Kayıt başlığı:");
+        if(!baslik) return;
 
-        const iplikler = [];
-        rows.forEach(row => {
-            iplikler.push({
-                adi: row.querySelector('.iplik-adi').value,
-                num: row.querySelector('.iplik-num').value,
-                may: row.querySelector('.may-cm').value,
-                adet: row.querySelector('.kullanilan-adet').value,
-                yuzde: row.querySelector('.sarfiyat-yuzdesi').textContent
+        const satirlar = document.querySelectorAll('#iplik-tablosu tbody tr');
+        let veriler = [];
+        satirlar.forEach(tr => {
+            veriler.push({
+                ad: tr.querySelector('.i-ad').value,
+                no: tr.querySelector('.i-no').value,
+                kat: tr.querySelector('.i-kat').value, // CM bilgisini saklar
+                oran: tr.querySelector('.i-oran').value // Sistem Adeti bilgisini saklar
             });
         });
 
-        const yeniKayit = {
+        oranRef.push({
+            baslik: baslik,
             tarih: new Date().toLocaleString('tr-TR'),
-            veriler: iplikler,
-            timestamp: Date.now()
-        };
-
-        oranRef.push(yeniKayit).then(() => {
-            alert("Hesaplama bulut veritabanına kaydedildi!");
-        });
+            timestamp: Date.now(),
+            veriler: veriler
+        }).then(() => alert("Kaydedildi!"));
     }
 
-    function gecmisiListele() {
+    oranRef.on("value", (snap) => {
         const liste = document.getElementById('gecmis-listesi');
-        const ids = Object.keys(bulutVerileri).reverse(); // En yeni en üstte
-        
-        liste.innerHTML = ids.length === 0 ? '<p style="color:#999;">Henüz kayıtlı hesaplama yok.</p>' : '';
+        liste.innerHTML = "";
+        const data = snap.val();
+        if(!data) return;
 
-        ids.forEach(id => {
-            const kayit = bulutVerileri[id];
-            const detay = kayit.veriler.map(i => `${i.adi} (%${i.yuzde})`).join(', ');
-            liste.innerHTML += `
-                <div class="history-card">
-                    <div class="history-header">
-                        <span class="history-date">📅 ${kayit.tarih}</span>
-                        <div class="history-actions">
-                            <button class="btn-load" onclick="kayitYukle('${id}')">🔄 Güncelle / Yükle</button>
-                            <button class="btn-delete-log" onclick="kayitSil('${id}')">🗑️ Sil</button>
+        Object.keys(data).map(k => ({id: k, ...data[k]}))
+            .sort((a,b) => b.timestamp - a.timestamp)
+            .forEach(k => {
+                liste.innerHTML += `
+                    <div class="history-item">
+                        <div><b>${k.baslik}</b><br><small>${k.tarih}</small></div>
+                        <div>
+                            <button class="btn btn-add" style="background:#17a2b8" onclick="yukle('${k.id}')">YÜKLE</button>
+                            <button class="btn btn-danger" onclick="buluttanSil('${k.id}')">SİL</button>
                         </div>
-                    </div>
-                    <div class="history-details">${detay}</div>
-                </div>
-            `;
-        });
-    }
+                    </div>`;
+            });
+    });
 
-    function kayitYukle(id) {
-        const kayit = bulutVerileri[id];
-        if(!kayit) return;
-
-        if(confirm("Mevcut tablo temizlenecek ve bu bulut kaydı yüklenecek. Onaylıyor musunuz?")) {
+    function yukle(id) {
+        oranRef.child(id).once("value", (snap) => {
+            const k = snap.val();
             const tbody = document.querySelector('#iplik-tablosu tbody');
             tbody.innerHTML = '';
-            kayit.veriler.forEach(i => satirEkle(i));
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        }
-    }
-
-    function kayitSil(id) {
-        if(confirm("Bu kaydı buluttan kalıcı olarak silmek istediğinize emin misiniz?")) {
-            oranRef.child(id).remove();
-        }
-    }
-
-    function tabloyuSifirla() {
-        if(confirm("Tüm satırları temizlemek istediğinize emin misiniz?")) {
-            document.querySelector('#iplik-tablosu tbody').innerHTML = '';
+            k.veriler.forEach(v => satirEkle(v));
             hesapla();
-        }
+        });
     }
 
-    function convertDenyeToNe() {
-        const d = document.getElementById('input-denye').value;
-        if (d > 0) document.getElementById('input-ne').value = (NE_DENYE_SABITI / d).toFixed(2);
+    function buluttanSil(id) {
+        if(confirm("Silinsin mi?")) oranRef.child(id).remove();
     }
-    function convertNeToDenye() {
-        const ne = document.getElementById('input-ne').value;
-        if (ne > 0) document.getElementById('input-denye').value = (NE_DENYE_SABITI / ne).toFixed(2);
-    }
+
+    satirEkle(); satirEkle();
 </script>
-
 </body>
 </html>
