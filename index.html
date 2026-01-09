@@ -3,226 +3,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS ERP v6.6 - Bulut Sistemi</title>
+    <title>MAKROTEKS ERP v4.3</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    
     <style>
         :root {
             --sidebar-bg: #1e293b; 
             --sidebar-hover: #334155;
-            --main-bg: #0f172a; 
+            --main-bg: #334155; 
             --accent: #3b82f6;
-            --text-white: #ffffff;
-            --text-muted: #cbd5e1;
-            --border-color: #334155;
-            --usd-color: #4ade80;
-            --eur-color: #fbbf24;
-            --status-online: #22c55e;
-            --status-offline: #ef4444;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #475569;
+            --currency-bg: rgba(30, 41, 59, 0.7);
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            margin: 0; background-color: var(--main-bg);
-            height: 100vh; display: flex; color: var(--text-white); overflow: hidden;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            margin: 0;
+            background-color: var(--main-bg);
+            height: 100vh;
+            display: flex;
+            color: white;
+            overflow: hidden;
         }
 
-        /* Sidebar */
+        /* Yan Menü Tasarımı */
         .sidebar {
-            width: 280px; min-width: 280px; background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 100;
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            z-index: 100;
+            border-right: 1px solid var(--border-color);
         }
 
-        .sidebar-header { 
-            padding: 30px 15px; text-align: center; border-bottom: 1px solid var(--border-color);
-            background: linear-gradient(to bottom, rgba(0,0,0,0.3), transparent);
-        }
-        
-        .brand-main { color: var(--accent); font-size: 1.3rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
-        .brand-sub { color: var(--text-white); font-size: 0.95rem; font-weight: 600; margin: 6px 0; }
-        .brand-ver { color: var(--text-white); font-size: 0.7rem; font-weight: 300; opacity: 0.6; letter-spacing: 3px; }
-
-        .nav-menu { flex: 1; padding: 15px 0; overflow-y: auto; }
-        .nav-item {
-            padding: 12px 25px; display: flex; align-items: center; gap: 12px;
-            color: var(--text-muted); text-decoration: none; cursor: pointer; transition: 0.2s; font-size: 14px;
-        }
-        .nav-item:hover, .nav-item.active { background-color: var(--sidebar-hover); color: var(--text-white); border-left: 4px solid var(--accent); }
-
-        /* Ana İçerik */
-        .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-
-        /* Üst Bar */
-        .top-bar {
-            height: 60px; background: var(--sidebar-bg);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 25px; border-bottom: 1px solid var(--border-color);
+        .sidebar-header {
+            padding: 25px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--sidebar-hover);
         }
 
-        #currentPageName { font-weight: bold; color: var(--accent); font-size: 15px; text-transform: uppercase; }
-
-        /* Orta: Döviz */
-        .top-bar-center { flex: 1; display: flex; justify-content: center; }
-        .currency-container {
-            display: flex; gap: 20px; background: rgba(15, 23, 42, 0.8);
-            padding: 7px 20px; border-radius: 30px; border: 1px solid var(--border-color);
-        }
-        .currency-item { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
-
-        /* Sağ: Durum ve Zaman */
-        .top-bar-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; }
-
-        /* Bulut Durum Göstergesi */
-        .cloud-status {
-            display: flex; align-items: center; gap: 8px;
-            padding: 6px 12px; border-radius: 8px;
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
-        }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--status-offline); box-shadow: 0 0 5px var(--status-offline); transition: 0.3s; }
-        .status-online .status-dot { background: var(--status-online); box-shadow: 0 0 8px var(--status-online); }
-        .status-text { color: var(--text-muted); }
-
-        .datetime-box {
-            display: flex; align-items: center; gap: 10px; font-family: 'JetBrains Mono', monospace;
-            font-size: 13px; color: var(--text-white); background: rgba(59, 130, 246, 0.1);
-            padding: 6px 15px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);
+        .sidebar-header h2 {
+            color: white;
+            font-size: 15px;
+            margin: 0;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
         }
 
-        #mainFrame { flex: 1; border: none; background: #fff; display: none; }
-        .welcome-screen { flex: 1; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #1e293b 0%, #0f172a 100%); }
-        .welcome-card { background: var(--sidebar-bg); padding: 50px; border-radius: 30px; text-align: center; border: 1px solid var(--border-color); }
-        .spinning-machine { font-size: 5rem; color: var(--accent); margin-bottom: 25px; animation: spin 12s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .menu-group {
+            padding: 10px 0;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        /* Kaydırma Çubuğu */
+        .menu-group::-webkit-scrollbar { width: 5px; }
+        .menu-group::-webkit-scrollbar-thumb { background: var(--border-color); }
+
+        .menu-label {
+            padding: 20px 25px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .nav-button {
+            display: flex;
+            align-items: center;
+            padding: 12px 25px;
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+            text-align: left;
+        }
+
+        .nav-button i {
+            width: 20px;
+            margin-right: 15px;
+            font-size: 18px;
+            color: #64748b;
+        }
+
+        .nav-button:hover {
+            background-color: var(--sidebar-hover);
+            color: white;
+            border-left: 4px solid var(--accent);
+        }
+
+        /* Ana İçerik Alanı */
+        .main-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--main-bg);
+        }
+
+        .top-nav {
+            height: 60px;
+            background-color: rgba(30, 41, 59, 0.5);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 20px; }
+        .nav-right { display: flex; align-items: center; gap: 20px; }
+
+        .currency-box {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--currency-bg);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .currency-item { display: flex; align-items: center; gap: 5px; }
+        .usd-color { color: #10b981; }
+        .eur-color { color: #f59e0b; }
+
+        .breadcrumb { font-size: 13px; color: #cbd5e1; }
+
+        .content-area {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: white;
+        }
+
+        .welcome-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100%;
+        }
+
+        .logo-box {
+            width: 120px;
+            height: 120px;
+            background: var(--sidebar-bg);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 2px solid var(--accent);
+        }
+
+        .logo-box i { font-size: 60px; color: var(--accent); }
+
+        .welcome-screen h1 {
+            font-size: 28px;
+            margin: 10px 0;
+            letter-spacing: 2px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .welcome-screen p { color: var(--text-muted); font-size: 16px; }
+
+        #currentTime { color: white; font-size: 13px; opacity: 0.8; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
+    <nav class="sidebar">
         <div class="sidebar-header">
-            <div class="brand-main">MAKROTEKS ERP</div>
-            <div class="brand-sub">Yönetim Sistemi</div>
-            <div class="brand-ver">VERSION 6.6.0</div>
+            <i class="fas fa-industry" style="color: var(--accent); font-size: 24px; margin-bottom: 10px;"></i>
+            <h2>MAKROTEKS ERP</h2>
         </div>
-        <nav class="nav-menu">
-            <div id="btn-home" class="nav-item active" onclick="goHome()"><i class="fas fa-th-large"></i> Ana Sayfa</div>
-            <div class="nav-item" onclick="loadPage('siparistakip.html', 'Sipariş Takip')"><i class="fas fa-shopping-cart"></i> Sipariş Takip</div>
-            <div class="nav-item" onclick="loadPage('depostok.html', 'İplik Stok')"><i class="fas fa-layer-group"></i> İplik Stok</div>
-            <div class="nav-item" onclick="loadPage('kumasstok.html', 'Kumaş Stok')"><i class="fas fa-boxes"></i> Kumaş Stok</div>
-            <div class="nav-item" onclick="loadPage('oran.html', 'İplik Oranları')"><i class="fas fa-percentage"></i> İplik Oranları</div>
-            <div class="nav-item" onclick="loadPage('igne.html', 'İğne Takip')"><i class="fas fa-compass-drafting"></i> İğne Takip</div>
-            <div class="nav-item" onclick="loadPage('kumasraporlari.html', 'Teknik Raporlar')"><i class="fas fa-file-contract"></i> Teknik Raporlar</div>
-            <div class="nav-item" onclick="loadPage('maliyet.html', 'Maliyet Analizi')"><i class="fas fa-coins"></i> Maliyet Analizi</div>
-            <div class="nav-item" onclick="loadPage('puantaj.html', 'Puantaj Takip')"><i class="fas fa-user-clock"></i> Puantaj</div>
-            <div class="nav-item" onclick="loadPage('personel.html', 'Personel & Maaş', true)"><i class="fas fa-user-tie"></i> Personel</div>
-            <div class="nav-item" onclick="loadPage('giderler.html', 'Gider Yönetimi', true)"><i class="fas fa-wallet"></i> Giderler</div>
-        </nav>
-    </div>
+        <div class="menu-group">
+            <div class="menu-label">Lojistik & Depo</div>
+            <button class="nav-button" onclick="loadPage('siparistakip.html', 'Sipariş Takip')">
+                <i class="fas fa-truck-moving"></i> Sipariş Takip
+            </button>
+            <button class="nav-button" onclick="loadPage('depostok.html', 'Depo Stok')">
+                <i class="fas fa-warehouse"></i> Depo Stok
+            </button>
+            <button class="nav-button" onclick="loadPage('kumasstok.html', 'Kumaş Takip')">
+                <i class="fas fa-scroll"></i> Kumaş Takip
+            </button>
 
-    <div class="main-content">
-        <div class="top-bar">
-            <div class="top-bar-left">
-                <span id="currentPageName">Panel Ana Sayfa</span>
-            </div>
+            <div class="menu-label">İnsan Kaynakları</div>
+            <button class="nav-button" onclick="loadPage('personel.html', 'Personel Yönetimi', true)">
+                <i class="fas fa-users-gear"></i> Personel Kartları
+            </button>
+            <button class="nav-button" onclick="loadPage('puantaj.html', 'Puantaj Kayıt')">
+                <i class="fas fa-stopwatch"></i> Puantaj
+            </button>
+            <button class="nav-button" onclick="loadPage('igne.html', 'İğne Takibi')">
+                <i class="fas fa-tools"></i> İğne Takip
+            </button>
 
-            <div class="top-bar-center">
-                <div class="currency-container">
-                    <div class="currency-item usd" style="color:var(--usd-color)"><i class="fas fa-dollar-sign"></i> <span id="usdRate">--.--</span></div>
-                    <div style="width:1px; background:var(--border-color); height:15px;"></div>
-                    <div class="currency-item eur" style="color:var(--eur-color)"><i class="fas fa-euro-sign"></i> <span id="eurRate">--.--</span></div>
-                </div>
-            </div>
-
-            <div class="top-bar-right">
-                <div id="cloudStatus" class="cloud-status">
-                    <div class="status-dot"></div>
-                    <span class="status-text">Bulut Kontrol...</span>
-                </div>
-
-                <div class="datetime-box">
-                    <i class="far fa-calendar-alt"></i>
-                    <span id="currentDateTime"></span>
-                </div>
-            </div>
+            <div class="menu-label">Maliyet & Muhasebe</div>
+            <button class="nav-button" onclick="loadPage('oran.html', 'İplik Oran Hesaplama')">
+                <i class="fas fa-percentage"></i> İplik Oran
+            </button>
+            <button class="nav-button" onclick="loadPage('maliyet.html', 'Kumaş Maliyet Hesabı')">
+                <i class="fas fa-file-invoice-dollar"></i> Maliyet Hesabı
+            </button>
+            <button class="nav-button" onclick="loadPage('kumasraporlari.html', 'Kumaş Raporları')">
+                <i class="fas fa-file-contract"></i> Kumaş Raporları
+            </button>
+            <button class="nav-button" onclick="loadPage('giderler.html', 'Gider Yönetimi', true)">
+                <i class="fas fa-wallet"></i> Gider Takibi
+            </button>
         </div>
+    </nav>
 
-        <div id="welcome" class="welcome-screen">
-            <div class="welcome-card">
-                <i class="fas fa-cloud-upload-alt spinning-machine"></i>
-                <h1 style="margin: 0; font-size: 2rem;">MAKROTEKS BULUT</h1>
-                <p style="color: var(--text-muted); margin: 20px 0;">Dijital Yönetim Altyapısı Aktif</p>
-                <button onclick="goHome()" style="background: var(--accent); color: white; border: none; padding: 15px 35px; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%;">SİSTEMİ YENİLE</button>
+    <main class="main-wrapper">
+        <header class="top-nav">
+            <div class="nav-left">
+                <div class="breadcrumb" id="currentPageName">Yönetim Paneli / Genel Bakış</div>
             </div>
-        </div>
+            <div class="nav-right">
+                <div class="currency-box">
+                    <div class="currency-item">
+                        <span class="usd-color">USD:</span>
+                        <span id="usdRate">...</span>
+                    </div>
+                    <div class="currency-item">
+                        <span class="eur-color">EUR:</span>
+                        <span id="eurRate">...</span>
+                    </div>
+                </div>
+                <div id="currentTime"></div>
+            </div>
+        </header>
 
-        <iframe id="mainFrame" src=""></iframe>
-    </div>
+        <section class="content-area">
+            <div id="welcome" class="welcome-screen">
+                <div class="logo-box">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <h1>MAKROTEKS YÖNETİM SİSTEMİ</h1>
+                <p>Modül seçimi yaparak işlemlere başlayabilirsiniz.</p>
+            </div>
+            <iframe id="mainFrame" style="display: none;"></iframe>
+        </section>
+    </main>
 
     <script>
-        // Firebase Yapılandırması
-        const firebaseConfig = {
-            apiKey: "AIzaSyB4zJ0nY_06VnOh-JEmpfhw8EzrvbCiIBA",
-            authDomain: "texerp-ea015.firebaseapp.com",
-            databaseURL: "https://texerp-ea015-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "texerp-ea015"
-        };
-        firebase.initializeApp(firebaseConfig);
-
-        // Bulut Bağlantı Kontrolü (Gerçek Zamanlı)
-        const connectedRef = firebase.database().ref(".info/connected");
-        connectedRef.on("value", (snap) => {
-            const statusDiv = document.getElementById("cloudStatus");
-            const statusText = statusDiv.querySelector(".status-text");
-            if (snap.val() === true) {
-                statusDiv.className = "cloud-status status-online";
-                statusText.innerText = "Bulut Aktif";
-            } else {
-                statusDiv.className = "cloud-status";
-                statusText.innerText = "Bağlantı Kesildi";
-            }
-        });
-
         async function fetchRates() {
             try {
-                const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-                const data = await res.json();
-                document.getElementById('usdRate').innerText = data.rates.TRY.toFixed(3);
-                document.getElementById('eurRate').innerText = (data.rates.TRY / data.rates.EUR).toFixed(3);
-            } catch (e) { console.error("Döviz Hatası"); }
+                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const data = await response.json();
+                const usdToTry = data.rates.TRY;
+                
+                const eurResponse = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
+                const eurData = await eurResponse.json();
+                const eurToTry = eurData.rates.TRY;
+
+                document.getElementById('usdRate').innerText = usdToTry.toFixed(2) + " ₺";
+                document.getElementById('eurRate').innerText = eurToTry.toFixed(2) + " ₺";
+            } catch (error) {
+                document.getElementById('usdRate').innerText = "Hata";
+                document.getElementById('eurRate').innerText = "Hata";
+            }
         }
 
+        // Şifre kontrolü bu fonksiyonda gerçekleşir
         function loadPage(url, title, password = false) {
             if (password) {
-                const pass = prompt("Yetkili Şifresi:");
-                if (pass !== "1308") return;
+                const pass = prompt("Yetkili şifresini giriniz:");
+                if (pass !== "1308") { 
+                    alert("Yetkisiz erişim!"); 
+                    return; 
+                }
             }
-            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-            event.currentTarget.classList.add('active');
             document.getElementById('welcome').style.display = 'none';
-            const f = document.getElementById('mainFrame');
-            f.style.display = 'block'; f.src = url;
-            document.getElementById('currentPageName').innerText = title;
+            const frame = document.getElementById('mainFrame');
+            frame.style.display = 'block';
+            frame.src = url;
+            document.getElementById('currentPageName').innerHTML = title;
         }
 
-        function goHome() {
-            const f = document.getElementById('mainFrame');
-            f.src = ""; f.style.display = "none";
-            document.getElementById('welcome').style.display = 'flex';
-            document.getElementById('currentPageName').innerText = "Panel Ana Sayfa";
-            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-            document.getElementById('btn-home').classList.add('active');
-        }
-
-        function updateDateTime() {
+        function updateTime() {
             const now = new Date();
-            document.getElementById('currentDateTime').innerText = now.toLocaleDateString('tr-TR') + " | " + now.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+            document.getElementById('currentTime').innerText = now.toLocaleString('tr-TR');
         }
 
-        setInterval(updateDateTime, 1000);
-        setInterval(fetchRates, 600000);
-        updateDateTime(); fetchRates();
+        setInterval(updateTime, 1000);
+        setInterval(fetchRates, 3600000);
+        updateTime();
+        fetchRates();
     </script>
 </body>
 </html>

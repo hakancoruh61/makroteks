@@ -3,317 +3,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS Sipariş Yönetimi v20.0 - Full Paket</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>MAKROTEKS Sipariş Takip v10.8</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     
     <style>
-        :root { --primary: #2563eb; --success: #16a34a; --info: #0891b2; --warning: #d97706; --danger: #dc2626; --dark: #0f172a; --slate: #64748b; --purple: #7c3aed; }
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; margin: 15px; color: var(--dark); }
-        .container { max-width: 100%; background: #fff; padding: 25px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        
-        /* FORM VE PANEL */
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; background: #f1f5f9; padding: 20px; border-radius: 12px; }
-        .input-group { display: flex; flex-direction: column; gap: 5px; }
-        label { font-weight: 700; font-size: 11px; color: var(--slate); text-transform: uppercase; }
-        input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; }
-        
-        /* ÜST TOPLAM PANELİ */
-        .summary-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
-        .summary-card { background: var(--dark); color: white; padding: 20px; border-radius: 12px; text-align: center; }
-        .summary-card span { display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
-        .summary-card b { font-size: 24px; color: #38bdf8; }
-        .summary-card.sevk { background: #065f46; } .summary-card.sevk b { color: #4ade80; }
-        .summary-card.kalan { background: #991b1b; } .summary-card.kalan b { color: #fca5a5; }
-
-        /* FİLTRELER */
-        .filter-section { margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        .filter-btn { padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; background: white; }
-        .filter-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
-
-        /* TABLO */
-        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; }
-        th { background: #f8fafc; color: var(--slate); padding: 15px; text-align: left; font-size: 12px; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        .box { padding: 5px 10px; border-radius: 6px; color: white; font-weight: 700; font-size: 13px; display: inline-block; min-width: 80px; text-align: center; }
-
-        /* İŞLEMLER PANELİ */
-        .action-container { display: none; background: #fff; border: 2px solid #2563eb; border-radius: 12px; padding: 15px; margin: 10px 0; animation: fadeIn 0.3s; }
-        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-        .action-buttons button { border: 1px solid #cbd5e1; background: #fff; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-        .action-buttons button:hover { background: #f8fafc; border-color: var(--primary); }
-
-        /* YAZDIRMA (A4) */
-        @page { size: A4; margin: 10mm; }
-        @media print {
-            .no-print { display: none !important; }
-            #printArea { display: block !important; visibility: visible !important; width: 100%; }
-            body * { visibility: hidden; }
-            #printArea * { visibility: visible; }
+        :root { 
+            --primary: #1a73e8; --success: #28a745; --danger: #dc3545; 
+            --warning: #ffc107; --info: #17a2b8; --dark: #1e293b; --bg-soft: #f1f3f5;
         }
-        #printArea { display: none; color: black; }
-        .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .print-table td { border: 2px solid black; padding: 12px; font-size: 18px; }
-        .p-label { background: #eee; font-weight: bold; width: 30%; }
-        .p-big { font-size: 22pt !important; font-weight: 900 !important; }
+        body { font-family: 'Segoe UI', sans-serif; background: #dfe4ea; margin: 20px; }
+        .container { max-width: 1600px; margin: auto; background: var(--bg-soft); padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        #connStatus { padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; float: right; }
+        .online { background: #d4edda; color: #155724; }
+        .offline { background: #f8d7da; color: #721c24; }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .summary-container { display: flex; gap: 20px; margin-bottom: 20px; }
+        .summary-card { flex: 1; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); display: flex; flex-direction: column; }
+        .summary-card.kalan { border-left-color: var(--danger); }
+        .summary-label { font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase; }
+        .summary-value { font-size: 24px; font-weight: 800; color: var(--dark); margin-top: 5px; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ced4da; clear: both; }
+        input, select, textarea { padding: 10px; border: 1px solid #adb5bd; border-radius: 6px; width: 100%; box-sizing: border-box; background: #ffffff; }
+        
+        button { padding: 8px 12px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; display: inline-flex; align-items: center; gap: 5px; justify-content: center; font-size: 12px; }
+        .btn-add { background: var(--success); color: white; font-size: 14px; }
+        .btn-status-action { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
+        .btn-status-complete { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+        .btn-sevk { background: #673ab7; color: white; }
+        .btn-edit { background: var(--warning); color: #333; }
+        .btn-note { background: var(--info); color: white; }
+        .btn-report { background: var(--dark); color: white; }
+        .btn-del { background: var(--danger); color: white; }
+
+        .filter-container { background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid #ced4da; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; background: #ffffff; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
+        th { background: var(--dark); color: white; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+        .order-row { cursor: pointer; transition: background 0.2s; }
+        .order-row:hover { background-color: #f8f9fa; }
+        .action-panel { display: none; background: #fdfdfd; border-left: 5px solid var(--primary); }
+        .action-content { padding: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+        .badge-kilo { padding: 6px 10px; border-radius: 4px; color: white; font-weight: normal; display: inline-block; min-width: 90px; text-align: center; }
+        .siparis-kilo-ozel { background-color: var(--success); } 
+        .sevk-kilo-ozel { background-color: var(--primary); }    
+        .kalan-pozitif { background-color: var(--danger); }     
+        .kalan-sifir { background-color: #6c757d; }              
+
+        .status-badge { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .beklemede { background: #fff3cd; color: #856404; }
+        .üretiliyor { background: #cce5ff; color: #004085; }
+        .bitti { background: #d4edda; color: #155724; }
+
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 10px; box-shadow: 0 0 50px rgba(0,0,0,0.5); z-index: 1000; width: 450px; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+        
+        @media print { .no-print { display: none !important; } }
+        .edit-calc-area { background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; border: 1px dashed #ccc; }
+        .edit-calc-row { display: flex; gap: 5px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-<div id="printArea">
-    <div style="text-align: center; border-bottom: 4px double black; padding-bottom: 10px;">
-        <h1 style="margin:0;">MAKROTEKS KUMAŞÇILIK</h1>
-        <h2 style="margin:5px 0;">ÖRME TALİMATI</h2>
-    </div>
-    <table class="print-table">
-        <tr><td class="p-label">SİPARİŞ TARİHİ</td><td id="p_tarih"></td></tr>
-        <tr><td class="p-label">FİRMA ADI</td><td id="p_firma"></td></tr>
-        <tr><td class="p-label">KUMAŞ İSMİ</td><td id="p_kumas" class="p-big"></td></tr>
-        <tr><td class="p-label">KUMAŞ GRAMAJI</td><td id="p_gramaj" class="p-big"></td></tr>
-        <tr><td class="p-label">SİPARİŞ MİKTARI</td><td id="p_miktar" style="font-size: 24px; font-weight: bold;"></td></tr>
-    </table>
-    <h3 style="margin-top:20px;">NOTLAR / TALİMATLAR:</h3>
-    <div id="p_notlar" style="border: 2px solid black; padding: 15px; min-height: 200px; font-size: 16px;"></div>
-</div>
+<div class="container">
+    <div id="connStatus" class="offline">BAĞLANILIYOR...</div>
+    <h2 style="text-align: center; color: var(--primary); margin-bottom: 25px;">🧵 MAKROTEKS SİPARİŞ TAKİP PANELİ</h2>
 
-<div class="container no-print">
-    <h2><i class="fa-solid fa-industry" style="color:var(--primary)"></i> MAKROTEKS SİPARİŞ TAKİP</h2>
-
-    <div class="form-grid">
-        <input type="hidden" id="edit_id">
-        <div class="input-group"><label>Tarih</label><input type="date" id="s_tarih"></div>
-        <div class="input-group"><label>Firma</label><input type="text" id="s_firma" placeholder="Müşteri"></div>
-        <div class="input-group"><label>Kumaş</label><input type="text" id="s_kumas" placeholder="Kumaş Cinsi"></div>
-        <div class="input-group"><label>Gramaj</label><input type="text" id="s_gramaj" placeholder="Örn: 160gr"></div>
-        <div class="input-group"><label>Miktar (KG)</label><input type="number" id="s_miktar" placeholder="0.00"></div>
-        <div class="input-group" style="justify-content: flex-end;">
-            <button onclick="kaydet()" id="saveBtn" style="background:var(--primary); color:white; padding:10px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; height:42px;"><i class="fa-solid fa-plus"></i> KAYDET</button>
+    <div class="summary-container no-print">
+        <div class="summary-card">
+            <span class="summary-label">Toplam Sipariş Miktarı</span>
+            <span id="totalSiparis" class="summary-value">0.00 KG</span>
+        </div>
+        <div class="summary-card kalan">
+            <span class="summary-label">Toplam Kalan Sipariş</span>
+            <span id="totalKalan" class="summary-value">0.00 KG</span>
         </div>
     </div>
 
-    <div class="summary-panel">
-        <div class="summary-card"><span>TOPLAM SİPARİŞ</span><b id="toplamSiparisKG">0 KG</b></div>
-        <div class="summary-card sevk"><span>TOPLAM SEVK</span><b id="toplamSevkKG">0 KG</b></div>
-        <div class="summary-card kalan"><span>TOPLAM KALAN</span><b id="toplamKalanKG">0 KG</b></div>
+    <div class="form-grid no-print">
+        <input type="date" id="inpTarih">
+        <input type="text" id="inpFirma" placeholder="Firma Adı">
+        <input type="text" id="inpKumas" placeholder="Kumaş Cinsi">
+        <input type="text" id="inpGramaj" placeholder="Gramaj">
+        <input type="number" id="inpMiktar" placeholder="Sipariş Toplam (KG)">
+        <button class="btn-add" onclick="ekle()">➕ SİPARİŞİ KAYDET</button>
     </div>
 
-    <div class="filter-section">
-        <button class="filter-btn active" id="btn-Üretimde" onclick="filtrele('Üretimde')">ÜRETİMDE</button>
-        <button class="filter-btn" id="btn-Beklemede" onclick="filtrele('Beklemede')">BEKLEMEDE</button>
-        <button class="filter-btn" id="btn-Bitti" onclick="filtrele('Bitti')">BİTTİ</button>
-        <button class="filter-btn" id="btn-Tümü" onclick="filtrele('Tümü')">TÜMÜ</button>
+    <div class="filter-container no-print">
+        <label>🔍 LİSTELE:</label>
+        <select id="filtre" onchange="listele()" style="width: 250px;">
+            <option value="HEPSİ">TÜM SİPARİŞLER (Alfabetik)</option>
+            <option value="ÜRETİLİYOR" selected>⚙️ ÜRETİMDEKİLER</option>
+            <option value="BEKLEMEDE">⏳ BEKLEYENLER</option>
+            <option value="BITTI">✅ BİTENLER</option>
+        </select>
+        <small style="color: #666; margin-left: auto;">* İşlemleri görmek için satıra tıklayın.</small>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th>TARİH</th>
-                <th>FİRMA</th>
-                <th>KUMAŞ / GR</th>
-                <th>SİPARİŞ</th>
-                <th>SEVK</th>
-                <th>KALAN</th>
-                <th>DURUM</th>
+                <th>Tarih</th>
+                <th>Firma</th>
+                <th>Kumaş</th>
+                <th>Gramaj</th>
+                <th>Sipariş (KG)</th>
+                <th>Sevk Edilen (KG)</th>
+                <th>Kalan Sipariş (KG)</th>
+                <th>Durum</th>
             </tr>
         </thead>
-        <tbody id="siparisListesi"></tbody>
+        <tbody id="siparisTable"></tbody>
     </table>
 </div>
 
-<div id="modalOverlay" onclick="modalKapat()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:999;"></div>
-<div id="notModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:25px; border-radius:15px; z-index:1000; width:450px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-    <h3 style="margin-top:0;"><i class="fa-solid fa-comment-dots"></i> Sipariş Notları</h3>
-    <input type="hidden" id="not_edit_id">
-    <textarea id="modal_not_text" style="width:100%; height:150px; padding:10px; border:1px solid #ccc; border-radius:8px; font-family:inherit; resize:none;"></textarea>
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-        <button onclick="modalKapat()" style="padding:10px 20px; border:none; background:#f1f5f9; border-radius:8px; cursor:pointer;">Kapat</button>
-        <button onclick="notlariKaydet()" style="padding:10px 20px; border:none; background:var(--success); color:white; border-radius:8px; font-weight:bold; cursor:pointer;">KAYDET</button>
+<div class="modal-overlay" id="overlay" onclick="modalKapat()"></div>
+<div class="modal" id="sevkModal">
+    <h3>📦 Sevkiyat Girişi</h3>
+    <p id="sevkBilgi" style="font-weight:bold; color:var(--primary);"></p>
+    <p id="mevcutSevkBilgi" style="font-size:12px; color:#666; margin-bottom:15px;"></p>
+    <label style="font-size:12px;">Yeni Sevk Edilen Miktarı Yazınız (KG):</label>
+    <input type="number" id="sevkMiktarInput" style="margin-top:10px; border: 2px solid #673ab7; font-size: 18px;" placeholder="0.00" step="0.01">
+    <button class="btn-sevk" onclick="sevkKaydet()" style="width:100%; margin-top:15px; padding:15px;">SEVKİYATI EKLE VE TOPLA</button>
+</div>
+
+<div class="modal" id="editModal">
+    <h3>✏️ Genel Bilgileri Güncelle</h3>
+    <label>Tarih</label><input type="text" id="editTarih" style="margin-bottom:8px;" placeholder="GG.AA.YYYY">
+    <label>Firma</label><input type="text" id="editFirma" style="margin-bottom:8px;">
+    <label>Kumaş</label><input type="text" id="editKumas" style="margin-bottom:8px;">
+    <label>Gramaj</label><input type="text" id="editGramaj" style="margin-bottom:8px;">
+    <div class="edit-calc-area">
+        <label>Sipariş KG (Mevcut)</label>
+        <input type="number" id="editMiktar" style="background: #e9ecef; font-weight: bold;">
+        <div class="edit-calc-row">
+            <input type="number" id="editMiktarIslem" placeholder="Eklenecek/Düşecek Miktar" step="0.01">
+            <button class="btn-add" onclick="miktarHesapla('ekle')" style="background: var(--success);">➕ EKLE</button>
+            <button class="btn-add" onclick="miktarHesapla('dus')" style="background: var(--danger);">➖ DÜŞÜR</button>
+        </div>
     </div>
+    <button class="btn-add" onclick="guncelle()" style="width:100%; margin-top:10px;">BİLGİLERİ KAYDET</button>
+</div>
+
+<div class="modal" id="notModal">
+    <h3>📋 Sipariş & Sevk Notları</h3>
+    <textarea id="notIcerik" style="height:150px; margin-bottom:15px;"></textarea>
+    <button class="btn-add" onclick="notKaydet()" style="width:100%">NOTU KAYDET</button>
 </div>
 
 <script>
     const firebaseConfig = {
-        apiKey: "AIzaSyB4zJ0nY_06VnOh-JEmpfhw8EzrvbCiIBA",
-        authDomain: "texerp-ea015.firebaseapp.com",
-        databaseURL: "https://texerp-ea015-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "texerp-ea015"
+        apiKey: "AIzaSyAeFLhVyrv4sn4kJmUtusLIOPWwgmKxe5c", 
+        authDomain: "kumastakip-6930a.firebaseapp.com",
+        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
+        projectId: "kumastakip-6930a",
+        storageBucket: "kumastakip-6930a.firebasestorage.app",
+        messagingSenderId: "796676836408",
+        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const ref = db.ref("siparis_yonetimi");
+    const sRef = db.ref('makroteks_siparisler'); 
 
-    let tumVeriler = {};
-    let aktifFiltre = "Üretimde";
+    let tumSiparisler = [];
+    let aktifID = null;
 
-    function fmt(n) { return new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(n); }
-    function fmtTarih(t) { if(!t) return "-"; const p = t.split("-"); return `${p[2]}.${p[1]}.${p[0]}`; }
+    window.onload = function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('inpTarih').value = today;
+    };
 
-    // KAYIT VE GÜNCELLEME
-    function kaydet() {
-        const id = document.getElementById('edit_id').value;
-        const veri = {
-            tarih: document.getElementById('s_tarih').value,
-            firma: document.getElementById('s_firma').value.toUpperCase(),
-            kumas: document.getElementById('s_kumas').value.toUpperCase(),
-            gramaj: document.getElementById('s_gramaj').value,
-            miktar: parseFloat(document.getElementById('s_miktar').value) || 0,
-            timestamp: Date.now()
-        };
-        if(!veri.firma || veri.miktar <= 0) return alert("Hata: Firma ve Miktar girmelisiniz!");
-        
-        if(id) {
-            ref.child(id).update(veri).then(() => formuTemizle());
-        } else {
-            veri.sevkedilen = 0;
-            veri.durum = "Üretimde";
-            veri.notlar = "";
-            ref.push(veri).then(() => formuTemizle());
-        }
+    function fNum(num) {
+        return (parseFloat(num) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // VERİLERİ DİNLE VE LİSTELE
-    ref.on("value", snap => {
-        tumVeriler = snap.val() || {};
-        const list = document.getElementById('siparisListesi');
-        list.innerHTML = "";
-        
-        let tSiparis = 0, tSevk = 0, tKalan = 0;
-        const keys = Object.keys(tumVeriler).filter(k => k !== 'trigger').sort((a,b) => tumVeriler[b].timestamp - tumVeriler[a].timestamp);
+    db.ref(".info/connected").on("value", (snap) => {
+        const el = document.getElementById('connStatus');
+        if (snap.val() === true) { el.innerText = "● BULUT AKTİF"; el.className = "online"; }
+        else { el.innerText = "○ BAĞLANTI KESİLDİ"; el.className = "offline"; }
+    });
 
-        keys.forEach(key => {
-            const s = tumVeriler[key];
-            if(aktifFiltre !== "Tümü" && s.durum !== aktifFiltre) return;
+    sRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        tumSiparisler = [];
+        if(data) {
+            Object.keys(data).forEach(id => {
+                let item = data[id];
+                if(!item.durum) item.durum = "BEKLEMEDE"; 
+                if(!item.sevk) item.sevk = 0;
+                tumSiparisler.push({id, ...item});
+            });
+        }
+        tumSiparisler.sort((a, b) => a.firma.localeCompare(b.firma, 'tr'));
+        listele();
+    });
 
-            const sevk = s.sevkedilen || 0;
-            const kalan = s.miktar - sevk;
-            tSiparis += s.miktar; tSevk += sevk; tKalan += kalan;
+    function listele() {
+        const table = document.getElementById('siparisTable');
+        const filtre = document.getElementById('filtre').value;
+        table.innerHTML = "";
+
+        let globalToplamSiparis = 0;
+        let globalToplamKalan = 0;
+
+        tumSiparisler.forEach(s => {
+            const sipKG = parseFloat(s.miktar) || 0;
+            const sevkKG = parseFloat(s.sevk) || 0;
+            const kalanKG = sipKG - sevkKG;
+
+            // Filtreleme kontrolü
+            if(filtre !== "HEPSİ" && s.durum !== filtre) return;
+
+            // Toplamları hesapla (sadece filtreye uyanları toplar)
+            globalToplamSiparis += sipKG;
+            globalToplamKalan += (kalanKG > 0 ? kalanKG : 0);
 
             const tr = document.createElement('tr');
+            tr.className = "order-row";
+            tr.onclick = () => toggleActions(s.id);
             tr.innerHTML = `
-                <td onclick="menuAc('${key}')" style="cursor:pointer; color:var(--slate)">${fmtTarih(s.tarih)}</td>
-                <td onclick="menuAc('${key}')" style="font-weight:700; cursor:pointer">${s.firma}</td>
-                <td onclick="menuAc('${key}')" style="cursor:pointer">${s.kumas} <small>(${s.gramaj})</small></td>
-                <td><span class="box" style="background:var(--success)">${fmt(s.miktar)}</span></td>
-                <td><span class="box" style="background:var(--info)">${fmt(sevk)}</span></td>
-                <td><span class="box" style="background:var(--danger)">${fmt(kalan)}</span></td>
-                <td style="font-weight:800; font-size:11px;">${s.durum.toUpperCase()}</td>
+                <td><small style="color:#555; font-weight:bold;">${s.tarih || '-'}</small></td>
+                <td><strong>${s.firma}</strong></td>
+                <td>${s.kumas}</td>
+                <td>${s.gramaj || '-'}</td>
+                <td><span class="badge-kilo siparis-kilo-ozel">${fNum(sipKG)} KG</span></td>
+                <td><span class="badge-kilo sevk-kilo-ozel">${fNum(sevkKG)} KG</span></td>
+                <td><span class="badge-kilo ${kalanKG > 0 ? 'kalan-pozitif' : 'kalan-sifir'}">${fNum(kalanKG)} KG</span></td>
+                <td><span class="status-badge ${s.durum.toLowerCase()}">${s.durum}</span></td>
             `;
-            
-            const actionRow = document.createElement('tr');
-            actionRow.className = "no-print";
-            actionRow.innerHTML = `
-                <td colspan="7" style="padding:0; border:none">
-                    <div id="menu-${key}" class="action-container">
-                        <div class="action-buttons">
-                            <button onclick="talimatYazdir('${key}')" style="background:var(--dark); color:white;"><i class="fa fa-print"></i> ÖRME TALİMATI YAZDIR</button>
-                            <button onclick="notModaliAc('${key}')"><i class="fa-solid fa-message"></i> NOTLAR</button>
-                            <button onclick="sevkiyatGir('${key}')"><i class="fa-solid fa-truck-loading"></i> SEVKİYAT GİR</button>
-                            <button onclick="kgGuncelle('${key}')" style="color:var(--purple); border-color:var(--purple);"><i class="fa-solid fa-plus-minus"></i> SİPARİŞ KG +/-</button>
-                            <button onclick="durumGuncelle('${key}','Üretimde')"><i class="fa fa-play"></i> ÜRETİMDE</button>
-                            <button onclick="durumGuncelle('${key}','Beklemede')"><i class="fa fa-pause"></i> BEKLETMEYE AL</button>
-                            <button onclick="durumGuncelle('${key}','Bitti')"><i class="fa fa-check-double"></i> BİTTİ</button>
-                            <button onclick="duzenle('${key}')"><i class="fa fa-edit"></i> DÜZENLE</button>
-                            <button onclick="sil('${key}')" style="color:var(--danger)"><i class="fa fa-trash"></i> SİL</button>
-                        </div>
+
+            const actionTr = document.createElement('tr');
+            actionTr.id = "actions-" + s.id;
+            actionTr.className = "action-panel no-print";
+            actionTr.innerHTML = `
+                <td colspan="8">
+                    <div class="action-content">
+                        <span style="font-weight:bold; color:var(--dark); margin-right:10px;">İŞLEMLER:</span>
+                        <button class="btn-status-action" onclick="durumDegistir('${s.id}', 'ÜRETİLİYOR')">⚙️ ÜRETİME AL</button>
+                        <button class="btn-status-complete" onclick="durumDegistir('${s.id}', 'BITTI')">✅ BİTTİ YAP</button>
+                        <button class="btn-sevk" onclick="sevkAc('${s.id}')">📦 SEVKIYAT GİR</button>
+                        <button class="btn-edit" onclick="duzenleAc('${s.id}')">✏️ DÜZENLE</button>
+                        <button class="btn-note" onclick="notAc('${s.id}')">📋 NOTLAR</button>
+                        <button class="btn-report" onclick="raporHazirla('${s.id}')">🖨️ YAZDIR</button>
+                        <button class="btn-del" onclick="sil('${s.id}')">🗑️ SİL</button>
                     </div>
                 </td>
             `;
-            list.appendChild(tr);
-            list.appendChild(actionRow);
+            table.appendChild(tr);
+            table.appendChild(actionTr);
         });
 
-        document.getElementById('toplamSiparisKG').innerText = fmt(tSiparis) + " KG";
-        document.getElementById('toplamSevkKG').innerText = fmt(tSevk) + " KG";
-        document.getElementById('toplamKalanKG').innerText = fmt(tKalan) + " KG";
-    });
-
-    // İŞLEMLER
-    function menuAc(id) {
-        const m = document.getElementById(`menu-${id}`);
-        const v = m.style.display === 'block';
-        document.querySelectorAll('.action-container').forEach(el => el.style.display = 'none');
-        if(!v) m.style.display = 'block';
+        document.getElementById('totalSiparis').innerText = fNum(globalToplamSiparis) + " KG";
+        document.getElementById('totalKalan').innerText = fNum(globalToplamKalan) + " KG";
     }
 
-    function kgGuncelle(id) {
-        const fark = prompt("Mevcut sipariş miktarına EKLEMEK için Örn: 100, DÜŞÜRMEK için Örn: -100 yazın:");
-        if(fark && !isNaN(fark)) {
-            const yeni = (tumVeriler[id].miktar || 0) + parseFloat(fark);
-            if(yeni < 0) return alert("Miktar 0'ın altına düşemez!");
-            ref.child(id).update({ miktar: yeni });
-        }
+    function toggleActions(id) {
+        const panel = document.getElementById("actions-" + id);
+        const isVisible = panel.style.display === "table-row";
+        document.querySelectorAll('.action-panel').forEach(p => p.style.display = "none");
+        panel.style.display = isVisible ? "none" : "table-row";
     }
 
-    function sevkiyatGir(id) {
-        const sevk = prompt("Yapılan sevkiyat miktarını (KG) girin:");
-        if(sevk && !isNaN(sevk)) {
-            const yeniSevk = (tumVeriler[id].sevkedilen || 0) + parseFloat(sevk);
-            ref.child(id).update({ sevkedilen: yeniSevk });
-        }
-    }
-
-    function talimatYazdir(id) {
-        const s = tumVeriler[id];
-        document.getElementById('p_tarih').innerText = fmtTarih(s.tarih);
-        document.getElementById('p_firma').innerText = s.firma;
-        document.getElementById('p_kumas').innerText = s.kumas;
-        document.getElementById('p_gramaj').innerText = s.gramaj;
-        document.getElementById('p_miktar').innerText = fmt(s.miktar) + " KG";
-        document.getElementById('p_notlar').innerText = s.notlar || "Özel bir not girilmemiştir.";
-        window.print();
-    }
-
-    function notModaliAc(id) {
-        document.getElementById('not_edit_id').value = id;
-        document.getElementById('modal_not_text').value = tumVeriler[id].notlar || "";
-        document.getElementById('modalOverlay').style.display = 'block';
-        document.getElementById('notModal').style.display = 'block';
-    }
-
-    function notlariKaydet() {
-        ref.child(document.getElementById('not_edit_id').value).update({ 
-            notlar: document.getElementById('modal_not_text').value 
-        }).then(() => modalKapat());
-    }
-
-    function modalKapat() { 
-        document.getElementById('modalOverlay').style.display = 'none'; 
-        document.getElementById('notModal').style.display = 'none'; 
-    }
-
-    function duzenle(id) {
-        const s = tumVeriler[id];
-        document.getElementById('edit_id').value = id;
-        document.getElementById('s_tarih').value = s.tarih;
-        document.getElementById('s_firma').value = s.firma;
-        document.getElementById('s_kumas').value = s.kumas;
-        document.getElementById('s_gramaj').value = s.gramaj;
-        document.getElementById('s_miktar').value = s.miktar;
-        document.getElementById('saveBtn').innerHTML = "<i class='fa-solid fa-sync'></i> GÜNCELLE";
-        window.scrollTo(0,0);
-    }
-
-    function filtrele(f) {
-        aktifFiltre = f;
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('btn-' + f).classList.add('active');
-        ref.child('trigger').set(Date.now());
-    }
-
-    function durumGuncelle(id, d) { ref.child(id).update({ durum: d }); }
-    function sil(id) { if(confirm("Bu siparişi silmek istediğinize emin misiniz?")) ref.child(id).remove(); }
+    function durumDegistir(id, yeniDurum) { sRef.child(id).update({ durum: yeniDurum }); }
     
-    function formuTemizle() { 
-        document.getElementById('edit_id').value = ""; 
-        document.querySelectorAll('.form-grid input').forEach(i => { if(i.type !== 'date') i.value = ""; });
-        document.getElementById('saveBtn').innerHTML = "<i class='fa-solid fa-plus'></i> KAYDET";
-        document.getElementById('s_tarih').valueAsDate = new Date();
+    function ekle() {
+        const t = document.getElementById('inpTarih').value;
+        const f = document.getElementById('inpFirma').value;
+        const k = document.getElementById('inpKumas').value;
+        const m = document.getElementById('inpMiktar').value;
+        if(!f || !k || !t) return alert("Eksik alan!");
+        const p = t.split('-');
+        const formatliTarih = p[2] + "." + p[1] + "." + p[0];
+        sRef.push({
+            tarih: formatliTarih, firma: f, kumas: k,
+            gramaj: document.getElementById('inpGramaj').value,
+            miktar: parseFloat(m) || 0,
+            sevk: 0, durum: "BEKLEMEDE", not: ""
+        });
+        document.querySelectorAll('.form-grid input').forEach(i => { if(i.id !== 'inpTarih') i.value = ""; });
     }
 
-    document.getElementById('s_tarih').valueAsDate = new Date();
+    function sevkAc(id) {
+        aktifID = id;
+        const s = tumSiparisler.find(x => x.id === id);
+        document.getElementById('sevkBilgi').innerText = s.firma + " - " + s.kumas;
+        document.getElementById('mevcutSevkBilgi').innerText = "Toplam Sevk Edilen: " + fNum(s.sevk || 0) + " KG";
+        document.getElementById('sevkMiktarInput').value = "";
+        document.getElementById('sevkModal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+        setTimeout(() => document.getElementById('sevkMiktarInput').focus(), 100);
+    }
+
+    function sevkKaydet() {
+        const yeniGelen = parseFloat(document.getElementById('sevkMiktarInput').value) || 0;
+        if(yeniGelen <= 0) return alert("Miktar giriniz.");
+        const s = tumSiparisler.find(x => x.id === aktifID);
+        sRef.child(aktifID).update({ sevk: (parseFloat(s.sevk) || 0) + yeniGelen });
+        modalKapat();
+    }
+
+    function duzenleAc(id) {
+        aktifID = id;
+        const s = tumSiparisler.find(x => x.id === id);
+        document.getElementById('editTarih').value = s.tarih || "";
+        document.getElementById('editFirma').value = s.firma;
+        document.getElementById('editKumas').value = s.kumas;
+        document.getElementById('editGramaj').value = s.gramaj;
+        document.getElementById('editMiktar').value = s.miktar;
+        document.getElementById('editModal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function miktarHesapla(tip) {
+        let mevcut = parseFloat(document.getElementById('editMiktar').value) || 0;
+        let islem = parseFloat(document.getElementById('editMiktarIslem').value) || 0;
+        document.getElementById('editMiktar').value = (tip === 'ekle' ? (mevcut + islem) : (mevcut - islem)).toFixed(2);
+        document.getElementById('editMiktarIslem').value = ""; 
+    }
+
+    function guncelle() {
+        sRef.child(aktifID).update({
+            tarih: document.getElementById('editTarih').value,
+            firma: document.getElementById('editFirma').value,
+            kumas: document.getElementById('editKumas').value,
+            gramaj: document.getElementById('editGramaj').value,
+            miktar: parseFloat(document.getElementById('editMiktar').value) || 0
+        });
+        modalKapat();
+    }
+
+    function notAc(id) {
+        aktifID = id;
+        const s = tumSiparisler.find(x => x.id === id);
+        document.getElementById('notIcerik').value = s.not || "";
+        document.getElementById('notModal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function notKaydet() {
+        sRef.child(aktifID).update({ not: document.getElementById('notIcerik').value });
+        modalKapat();
+    }
+
+    function modalKapat() { document.querySelectorAll('.modal, .modal-overlay').forEach(m => m.style.display='none'); }
+    function sil(id) { if(confirm("Kaydı silmek istiyor musunuz?")) sRef.child(id).remove(); }
+
+    function raporHazirla(id) {
+        const s = tumSiparisler.find(x => x.id === id);
+        const rWindow = window.open('', '', 'width=900,height=850');
+        rWindow.document.write(`<html><head><title>Talimat</title><style>body{font-family:sans-serif;padding:40px;}.h{border-bottom:5px solid #000;display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;margin-bottom:30px;}.r{display:flex;border-bottom:1px solid #ccc;padding:15px 0;font-size:20px;}.l{width:250px;font-weight:bold;}.buyuk{font-size:28px;font-weight:900;margin-top:10px;}.n{margin-top:40px;padding:25px;border:2px solid #000;border-radius:10px;}</style></head><body><div class="h"><h1>MAKROTEKS KUMAŞÇILIK ÖRME TALİMATI</h1><span>${new Date().toLocaleDateString('tr-TR')}</span></div><div class="r"><div class="l">Sipariş Tarihi:</div><div>${s.tarih || '-'}</div></div><div class="r"><div class="l">Firma:</div><div>${s.firma}</div></div><div class="r"><div class="l">Kumaş Cinsi:</div><div>${s.kumas}</div></div><div class="r"><div class="l">Gramaj:</div><div>${s.gramaj || '-'}</div></div><div style="margin-top:30px;"><div style="font-size:20px;font-weight:bold;">TOPLAM SİPARİŞ MİKTARI:</div><div class="buyuk">${fNum(s.miktar)} KG</div></div><div class="n"><h3>NOTLAR</h3><p style="white-space:pre-wrap;font-size:18px;">${s.not || 'Yok'}</p></div><script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};}<\/script></body></html>`);
+        rWindow.document.close();
+    }
 </script>
 </body>
 </html>

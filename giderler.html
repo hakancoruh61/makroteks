@@ -3,213 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS Gider Yönetimi - Bulut Sistemi</title>
+    <title>MAKROTEKS Gider Yönetimi</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    
+
     <style>
-        :root { --primary: #2c3e50; --danger: #dc3545; --success: #28a745; --blue: #007bff; }
+        :root { --primary: #2c3e50; --danger: #dc3545; --success: #28a745; --blue: #007bff; --warning: #f39c12; }
         body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 15px; color: #333; }
         .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
-        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; background: #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box; }
-        button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
-        .btn-save { background: var(--success); }
-        .btn-update { background: var(--blue); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background: var(--primary); color: white; }
-        .total-box { font-size: 20px; font-weight: bold; text-align: right; margin-top: 15px; color: var(--danger); padding: 10px; border-top: 2px solid #333; }
-        #connStatus { float: right; font-size: 12px; color: green; font-weight: bold; }
-        @media print { .no-print { display: none !important; } }
+        
+        .print-only-header { display: none; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        h2 { text-align: center; color: var(--primary); text-transform: uppercase; border-bottom: 3px solid var(--danger); padding-bottom: 10px; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; transition: 0.3s; }
+        .edit-mode-active { border: 2px solid var(--warning); background: #fffdf5; }
+        
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        
+        .btn-add { background: var(--success); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 22px; }
+        .btn-update { background: var(--warning); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 22px; display: none; }
+        .btn-cancel { background: #666; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 22px; display: none; }
+        .btn-print { background: var(--blue); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+        .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 10px; background: #e9ecef; border-radius: 5px; }
+        
+        table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; word-wrap: break-word; }
+        th { background: var(--primary); color: white; font-size: 12px; }
+        
+        .total-row { background: #212529 !important; color: #fff; font-weight: bold; }
+        .action-btns { display: flex; gap: 8px; }
+        .btn-table-edit { background: none; border: none; color: var(--warning); cursor: pointer; font-size: 18px; }
+        .btn-table-delete { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px; }
+
+        @media print {
+            @page { size: A4 portrait; margin: 1cm; }
+            .form-grid, .btn-print, .btn-back, .action-btns, .filter-bar, th:last-child, td:last-child { display: none !important; }
+            .print-only-header { display: block !important; }
+            h2 { display: none; }
+            body { background: white; margin: 0; padding: 0; }
+            .container { box-shadow: none; border: none; width: 100% !important; padding: 0 !important; }
+            table { width: 100% !important; border: 1px solid #000; }
+            th, td { border: 1px solid #000 !important; padding: 8px 5px !important; font-size: 10pt !important; }
+            th:nth-child(1) { width: 15%; } th:nth-child(2) { width: 20%; }
+            th:nth-child(3) { width: 15%; } th:nth-child(4) { width: 35%; }
+            th:nth-child(5) { width: 15%; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="connStatus">● Bulut Aktif</div>
-    <h2>💸 İŞLETME GİDER VE HARCAMA YÖNETİMİ</h2>
-
-    <div class="form-row no-print">
-        <input type="hidden" id="edit_id">
-        <div>
-            <label style="font-size: 12px; font-weight: bold;">Harcama Yapan / İlgili</label>
-            <input type="text" id="g_personel" placeholder="Örn: Ahmet Yılmaz">
-        </div>
-        <div>
-            <label style="font-size: 12px; font-weight: bold;">Açıklama</label>
-            <input type="text" id="g_aciklama" placeholder="Örn: Yemek Bedeli">
-        </div>
-        <div>
-            <label style="font-size: 12px; font-weight: bold;">Tutar (TL)</label>
-            <input type="number" id="g_tutar" placeholder="0.00">
-        </div>
-        <div>
-            <label style="font-size: 12px; font-weight: bold;">Kategori</label>
-            <select id="g_kategori">
-                <option value="Yemek">Yemek</option>
-                <option value="Yol/Yakıt">Yol/Yakıt</option>
-                <option value="Bakım/Onarım">Bakım/Onarım</option>
-                <option value="Hırdavat">Hırdavat</option>
-                <option value="Diğer">Diğer</option>
-            </select>
-        </div>
-        <div style="display: flex; align-items: flex-end;">
-            <button class="btn-save" id="btn_ana" onclick="kaydet()" style="width: 100%;">GİDERİ KAYDET</button>
-        </div>
+    <div class="print-only-header">
+        <h1 id="printTitle">GİDER RAPORU</h1>
+        <p>MAKROTEKS KUMAŞÇILIK YÖNETİM SİSTEMİ</p>
     </div>
 
-    <div class="no-print" style="margin-bottom: 15px;">
-        <label>Dönem Filtresi:</label>
-        <select id="filtre_ay" onchange="listele()" style="width: 200px; display: inline-block; margin-left: 10px;">
-            <option value="all">Tüm Zamanlar</option>
-        </select>
-        <button onclick="window.print()" style="background: #555; margin-left: 10px;">YAZDIR (PDF)</button>
+    <div style="display: flex; justify-content: space-between;">
+        <button onclick="window.location.href='MAKROTEKS KUMAŞÇILIK.html'" class="btn-back">← Geri Dön</button>
+        <button class="btn-print" onclick="yazdir()">🖨️ RAPORU YAZDIR</button>
+    </div>
+
+    <h2>GİDER YÖNETİM SİSTEMİ</h2>
+
+    <div class="form-grid" id="inputForm">
+        <input type="hidden" id="editId">
+        <div class="form-group"><label>TARİH</label><input type="date" id="g_tarih"></div>
+        <div class="form-group"><label>İŞLEM YAPAN</label><input type="text" id="g_personel" placeholder="İsim"></div>
+        <div class="form-group">
+            <label>İŞLEM TÜRÜ</label>
+            <select id="g_islem">
+                <option value="Nakit">Nakit</option>
+                <option value="Kredi Kartı">Kredi Kartı</option>
+                <option value="Çek">Çek</option>
+            </select>
+        </div>
+        <div class="form-group"><label>AÇIKLAMA</label><input type="text" id="g_aciklama"></div>
+        <div class="form-group"><label>TUTAR (TL)</label><input type="number" id="g_tutar" step="0.01"></div>
+        
+        <button class="btn-add" id="btnAdd" onclick="giderKaydet()">KAYDET</button>
+        <button class="btn-update" id="btnUpdate" onclick="guncelleOnay()">GÜNCELLE</button>
+        <button class="btn-cancel" id="btnCancel" onclick="iptalEt()">İPTAL</button>
+    </div>
+
+    <div class="filter-bar">
+        <div>
+            <strong>📅 DÖNEM:</strong>
+            <select id="ayFiltre" onchange="verileriYukle()">
+                <option value="all">Tüm Zamanlar</option>
+                <option value="01">Ocak</option><option value="02">Şubat</option><option value="03">Mart</option>
+                <option value="04">Nisan</option><option value="05">Mayıs</option><option value="06">Haziran</option>
+                <option value="07">Temmuz</option><option value="08">Ağustos</option><option value="09">Eylül</option>
+                <option value="10">Ekim</option><option value="11">Kasım</option><option value="12">Aralık</option>
+            </select>
+        </div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th>Tarih</th>
-                <th>İlgili</th>
-                <th>Açıklama</th>
-                <th>Kategori</th>
-                <th>Tutar</th>
-                <th class="no-print">İşlem</th>
+                <th>Tarih</th><th>İşlem Yapan</th><th>İşlem</th><th>Açıklama</th><th>Tutar</th><th class="action-btns">Yönet</th>
             </tr>
         </thead>
         <tbody id="giderBody"></tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="4" style="text-align: right;">GENEL TOPLAM:</td>
+                <td id="genelToplam">0.00 TL</td>
+                <td class="action-btns"></td>
+            </tr>
+        </tfoot>
     </table>
-
-    <div class="total-box" id="toplamAlan">GENEL TOPLAM: 0.00 TL</div>
 </div>
 
 <script>
-    // FİREBASE YAPILANDIRMASI
     const firebaseConfig = {
-        apiKey: "AIzaSyB4zJ0nY_06VnOh-JEmpfhw8EzrvbCiIBA",
-        authDomain: "texerp-ea015.firebaseapp.com",
-        databaseURL: "https://texerp-ea015-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "texerp-ea015",
-        storageBucket: "texerp-ea015.firebasestorage.app",
-        messagingSenderId: "531851332664",
-        appId: "1:531851332664:web:d2af3d69b6241d7fd8eacd"
+        apiKey: "AIzaSyAeFLhVyrv4sn4kJmUtusLIOPWwgmKxe5c",
+        authDomain: "kumastakip-6930a.firebaseapp.com",
+        databaseURL: "https://kumastakip-6930a-default-rtdb.firebaseio.com",
+        projectId: "kumastakip-6930a",
+        storageBucket: "kumastakip-6930a.firebasestorage.app",
+        messagingSenderId: "796676836408",
+        appId: "1:796676836408:web:cf74345b2a412cb1c26acd"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const giderRef = db.ref("giderler");
+    const giderRef = db.ref('gider_kayitlari_yeni');
 
-    function kaydet() {
-        const id = document.getElementById('edit_id').value;
-        const personel = document.getElementById('g_personel').value.toUpperCase();
-        const aciklama = document.getElementById('g_aciklama').value.toUpperCase();
-        const tutar = parseFloat(document.getElementById('g_tutar').value) || 0;
-        const kategori = document.getElementById('g_kategori').value;
-        const d = new Date();
-        const ayKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
-
-        if(!personel || tutar <= 0) return alert("Lütfen isim ve tutar giriniz!");
-
-        const veri = {
-            personel, aciklama, tutar, kategori,
-            ay: ayKey,
-            tarih: d.toLocaleString('tr-TR'),
-            ts: Date.now()
-        };
-
-        if(id) {
-            giderRef.child(id).set(veri).then(() => {
-                alert("Güncellendi");
-                formTemizle();
-            });
-        } else {
-            giderRef.push(veri).then(() => {
-                formTemizle();
-            });
-        }
+    function formatMoney(amount) {
+        return amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    giderRef.on("value", (snap) => {
-        const data = snap.val();
-        listele(data);
-        donemleriGuncelle(data);
-    });
+    window.onload = () => {
+        formReset();
+        verileriYukle();
+    };
 
-    function listele(data) {
-        if(!data) data = {};
-        const body = document.getElementById('giderBody');
-        const filtre = document.getElementById('filtre_ay').value;
-        body.innerHTML = "";
-        let toplam = 0;
-
-        const liste = Object.keys(data).map(k => ({id: k, ...data[k]}));
-        liste.sort((a,b) => b.ts - a.ts);
-
-        liste.forEach(g => {
-            if(filtre !== "all" && g.ay !== filtre) return;
-
-            toplam += g.tutar;
-            body.innerHTML += `
-                <tr>
-                    <td><small>${g.tarih}</small></td>
-                    <td><b>${g.personel}</b></td>
-                    <td>${g.aciklama}</td>
-                    <td><span style="font-size:11px; background:#eee; padding:2px 5px; border-radius:3px;">${g.kategori}</span></td>
-                    <td style="font-weight:bold">${g.tutar.toLocaleString('tr-TR', {minimumFractionDigits:2})} ₺</td>
-                    <td class="no-print">
-                        <button onclick="duzenle('${g.id}')" style="background:var(--blue); padding:3px 8px;">✏️</button>
-                        <button onclick="sil('${g.id}')" style="background:var(--danger); padding:3px 8px;">🗑️</button>
-                    </td>
-                </tr>
-            `;
-        });
-
-        document.getElementById('toplamAlan').innerText = `TOPLAM: ${toplam.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL`;
-    }
-
-    function donemleriGuncelle(data) {
-        if(!data) return;
-        const select = document.getElementById('filtre_ay');
-        const mevcut = select.value;
-        const donemler = [...new Set(Object.values(data).map(v => v.ay))].sort().reverse();
-        
-        select.innerHTML = '<option value="all">Tüm Zamanlar</option>';
-        donemler.forEach(d => {
-            const [y, m] = d.split('-');
-            const ayAd = new Date(y, m-1).toLocaleString('tr-TR', {month:'long', year:'numeric'});
-            select.innerHTML += `<option value="${d}" ${d === mevcut ? 'selected' : ''}>${ayAd}</option>`;
-        });
-    }
-
-    function duzenle(id) {
-        giderRef.child(id).once("value", (snap) => {
-            const g = snap.val();
-            document.getElementById('edit_id').value = id;
-            document.getElementById('g_personel').value = g.personel;
-            document.getElementById('g_aciklama').value = g.aciklama;
-            document.getElementById('g_tutar').value = g.tutar;
-            document.getElementById('g_kategori').value = g.kategori;
-            document.getElementById('btn_ana').innerText = "DEĞİŞİKLİKLERİ KAYDET";
-            document.getElementById('btn_ana').className = "btn-update";
-        });
-    }
-
-    function sil(id) {
-        if(confirm("Bu gider kaydını silmek istediğinize emin misiniz?")) {
-            giderRef.child(id).remove();
-        }
-    }
-
-    function formTemizle() {
-        document.getElementById('edit_id').value = "";
+    function formReset() {
+        document.getElementById('g_tarih').value = new Date().toISOString().split('T')[0];
         document.getElementById('g_personel').value = "";
         document.getElementById('g_aciklama').value = "";
         document.getElementById('g_tutar').value = "";
-        document.getElementById('btn_ana').innerText = "GİDERİ KAYDET";
-        document.getElementById('btn_ana').className = "btn-save";
+        document.getElementById('editId').value = "";
+        document.getElementById('btnAdd').style.display = "block";
+        document.getElementById('btnUpdate').style.display = "none";
+        document.getElementById('btnCancel').style.display = "none";
+        document.getElementById('inputForm').classList.remove('edit-mode-active');
     }
+
+    function yazdir() {
+        const select = document.getElementById('ayFiltre');
+        const ayMetni = select.options[select.selectedIndex].text;
+        const yil = new Date().getFullYear();
+        document.getElementById('printTitle').innerText = select.value === "all" ? "GENEL GİDER RAPORU" : `${ayMetni.toUpperCase()} ${yil} GİDER RAPORU`;
+        window.print();
+    }
+
+    function giderKaydet() {
+        const t = document.getElementById('g_tarih').value;
+        const p = document.getElementById('g_personel').value;
+        const i = document.getElementById('g_islem').value;
+        const a = document.getElementById('g_aciklama').value;
+        const tutar = document.getElementById('g_tutar').value;
+
+        if(!t || !p || !a || !tutar) return alert("Eksik alan!");
+
+        const d = new Date(t);
+        const formatliTarih = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+        
+        giderRef.push({
+            tarih: formatliTarih,
+            ay: String(d.getMonth() + 1).padStart(2, '0'),
+            rawDate: t,
+            personel: p,
+            islem: i,
+            aciklama: a,
+            tutar: parseFloat(tutar)
+        }).then(() => formReset());
+    }
+
+    function duzenleModu(id, rawDate, personel, islem, aciklama, tutar) {
+        document.getElementById('editId').value = id;
+        document.getElementById('g_tarih').value = rawDate;
+        document.getElementById('g_personel').value = personel;
+        document.getElementById('g_islem').value = islem;
+        document.getElementById('g_aciklama').value = aciklama;
+        document.getElementById('g_tutar').value = tutar;
+
+        document.getElementById('btnAdd').style.display = "none";
+        document.getElementById('btnUpdate').style.display = "block";
+        document.getElementById('btnCancel').style.display = "block";
+        document.getElementById('inputForm').classList.add('edit-mode-active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function guncelleOnay() {
+        const id = document.getElementById('editId').value;
+        const t = document.getElementById('g_tarih').value;
+        const d = new Date(t);
+        const formatliTarih = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+
+        db.ref('gider_kayitlari_yeni/' + id).update({
+            rawDate: t,
+            tarih: formatliTarih,
+            ay: String(d.getMonth() + 1).padStart(2, '0'),
+            personel: document.getElementById('g_personel').value,
+            islem: document.getElementById('g_islem').value,
+            aciklama: document.getElementById('g_aciklama').value,
+            tutar: parseFloat(document.getElementById('g_tutar').value)
+        }).then(() => {
+            alert("Güncellendi!");
+            formReset();
+        });
+    }
+
+    function iptalEt() { formReset(); }
+
+    function verileriYukle() {
+        const filtre = document.getElementById('ayFiltre').value;
+        giderRef.on('value', (snap) => {
+            const body = document.getElementById('giderBody');
+            body.innerHTML = "";
+            let gTop = 0;
+            let veriListesi = [];
+
+            snap.forEach((child) => {
+                veriListesi.push({ id: child.key, ...child.val() });
+            });
+
+            // TARİH SIRALAMASI: Eskiden Yeniye (01.01.2026 -> 05.01.2026)
+            veriListesi.sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
+
+            veriListesi.forEach((v) => {
+                if(filtre === 'all' || v.ay === filtre) {
+                    gTop += v.tutar;
+                    body.innerHTML += `<tr>
+                        <td>${v.tarih}</td>
+                        <td>${v.personel}</td>
+                        <td>${v.islem}</td>
+                        <td>${v.aciklama}</td>
+                        <td style="font-weight:bold">${formatMoney(v.tutar)} TL</td>
+                        <td class="action-btns">
+                            <button class="btn-table-edit" onclick="duzenleModu('${v.id}', '${v.rawDate}', '${v.personel}', '${v.islem}', '${v.aciklama}', ${v.tutar})">✏️</button>
+                            <button class="btn-table-delete" onclick="sil('${v.id}')">🗑️</button>
+                        </td>
+                    </tr>`;
+                }
+            });
+            document.getElementById('genelToplam').innerText = formatMoney(gTop) + " TL";
+        });
+    }
+
+    function sil(id) { if(confirm("Silinsin mi?")) db.ref('gider_kayitlari_yeni/' + id).remove(); }
 </script>
 </body>
 </html>
