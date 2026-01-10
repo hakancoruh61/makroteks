@@ -10,8 +10,26 @@
     
     <style>
         :root { --primary: #0f172a; --accent: #0ea5e9; --success: #10b981; --danger: #ef4444; --slate: #f1f5f9; }
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; padding: 20px; color: #1e293b; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        
+        /* KÜÇÜLTME AYARI: Sayfa genelini %85 oranında ölçekledik */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #f8fafc; 
+            padding: 10px; 
+            color: #1e293b; 
+            zoom: 0.85; /* Tarayıcı ölçeklendirmesi */
+        }
+
+        /* KONTEYNER GENİŞLİĞİ: 1000px'den 950px'e çekilerek daha toplu durması sağlandı */
+        .container { 
+            max-width: 950px; 
+            margin: auto; 
+            background: white; 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
+        }
+
         .exchange-bar { background: var(--primary); color: white; padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .results-container-top { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
         .cost-card { padding: 20px; border-radius: 16px; text-align: center; border: 2px solid #e2e8f0; }
@@ -31,7 +49,12 @@
         .row-link { cursor: pointer; transition: 0.2s; }
         .row-link:hover { background: #f1f5f9; }
         #saveMsg { color: var(--success); font-weight: bold; text-align: center; margin-bottom: 10px; display: none; }
-        @media print { .button-group, .history-section, .btn-clear, i, button { display: none !important; } }
+
+        /* YAZDIRMA AYARI: Çıktı alırken küçültmeyi iptal eder */
+        @media print { 
+            body { zoom: 1; padding: 0; }
+            .button-group, .history-section, .btn-clear, i, button { display: none !important; } 
+        }
     </style>
 </head>
 <body>
@@ -190,13 +213,11 @@
         });
     }
 
-    // KAYITLI KUMAŞA TIKLAYINCA DETAYLARI DOLDURAN FONKSİYON
     function yukle(id) {
         maliyetRef.child(id).once("value", (snap) => {
             const m = snap.val();
             if(!m) return;
 
-            // Form alanlarını doldur
             document.getElementById('kumasAdi').value = m.kumas;
             document.getElementById('manuelKur').value = m.kur;
             document.getElementById('orgu').value = m.orgu;
@@ -205,14 +226,13 @@
             document.getElementById('boyaFire').value = m.bFire;
             document.getElementById('genelGider').value = m.gGider;
 
-            // İplik listesini temizle ve yeniden oluştur
             const liste = document.getElementById('iplikListesi');
             liste.innerHTML = "";
             if(m.iplikler) {
                 m.iplikler.forEach(i => iplikSatirEkle(i.ad, i.oran, i.fiyat));
             }
 
-            hesapla(); // Veriler dolunca otomatik hesapla
+            hesapla();
             window.scrollTo({top: 0, behavior: 'smooth'});
         });
     }

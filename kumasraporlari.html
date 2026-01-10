@@ -2,77 +2,137 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>MAKROTEKS Teknik Rapor - Bulut Arşivi</title>
+    <title>Teknik Rapor v28.2 - Bulut Sürümü</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; }
-        .ana-konteyner { max-width: 1250px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .input-alan { border: 1px solid #94a3b8; padding: 6px 10px; border-radius: 4px; width: 100%; font-size: 14px; }
-        .etiket { font-weight: bold; font-size: 11px; color: #475569; text-transform: uppercase; margin-bottom: 2px; }
-        @media print { .no-print { display: none !important; } .ana-konteyner { box-shadow: none; border: none; width: 100%; } }
-        #connStatus { font-size: 12px; color: green; font-weight: bold; float: right; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; padding: 0; background-color: #f1f5f9; display: flex; flex-direction: column; min-height: 100vh;
+            zoom: 0.85; /* Diğer sayfalarınızla uyumlu olması için küçültme eklendi */
+        }
+        .ana-icerik-sarma { flex: 1; padding: 15px; }
+        .ana-konteyner { max-width: 1250px; margin: 0 auto; background: white; padding: 12px; border: 1px solid #ccc; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .arsiv-alt-panel { max-width: 1250px; margin: 20px auto; width: 100%; background: #1e293b; color: white; border-radius: 8px; overflow: hidden; }
+        .arsiv-ust-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #0f172a; border-bottom: 1px solid #334155; flex-wrap: wrap; gap: 10px; }
+        .arsiv-baslik { font-weight: 800; font-size: 14px; text-transform: uppercase; color: #94a3b8; }
+        .arsiv-liste { padding: 10px 20px; display: flex; flex-direction: column; gap: 6px; max-height: 500px; overflow-y: auto; }
+        .arsiv-item { width: 100%; background: #334155; padding: 10px 15px; border-radius: 4px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; border: 1px solid transparent; }
+        .arsiv-item:hover { background: #475569; border-color: #3b82f6; }
+        .arsiv-item .kumas-ad { font-size: 13px; font-weight: bold; text-transform: uppercase; flex: 1; }
+        .arsiv-item .sil-btn { color: #f87171; font-weight: bold; padding: 2px 10px; border-radius: 4px; font-size: 18px; }
+        .rapor-ismi { font-size: 22pt; font-weight: 900; line-height: 1.2; margin-bottom: 6px; text-transform: uppercase; border: none; outline: none; width: 100%; background: transparent; }
+        .info-label { font-weight: bold; font-size: 10px; color: #1e3a8a; text-transform: uppercase; display: block; margin-bottom: 1px; }
+        .info-input { border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; outline: none; width: 100%; font-weight: 600; font-size: 11px; height: 22px; }
+        table { border-collapse: collapse; margin-bottom: 5px; width: 100%; }
+        .needle-cell { min-width: 19px; width: 19px; height: 21px; cursor: pointer; border: 1px solid #000; text-align: center; background-color: #fff; user-select: none; }
+        .cell-thick { font-family: 'Arial Black', sans-serif; font-size: 14px; font-weight: 900; }
+        .cell-normal { font-family: Arial, sans-serif; font-size: 15px; }
+        .row-label { background-color: #f1f5f9; font-weight: bold; width: 40px; border: 1px solid #000; font-size: 10px; text-align: center; }
+        .num-header { background-color: #1e293b; color: white; font-size: 8px; border: 1px solid #000; height: 14px; }
+        #imageBox { width: 100%; max-width: 550px; height: 280px; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; background: #f8fafc; margin-top: 10px; }
+        #imageBox img { width: 100%; height: 100%; object-fit: contain; }
+        .ayak-ana-blok { display: inline-flex; flex-direction: column; border: 1px solid #94a3b8; background: #f8fafc; }
+        .ayak-satir { display: flex; }
+        .ayak-box { width: 19px; height: 19px; border: 1px solid #94a3b8; cursor: text; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; outline: none; text-transform: uppercase; overflow: hidden; }
+        .not-area { border: 1px solid #cbd5e1; border-radius: 4px; width: 100%; font-size: 11px; padding: 4px; resize: none; font-weight: 600; height: 50px; margin-top: 4px; outline: none; }
+        .copy-panel { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #0f172a; color: white; padding: 10px 25px; border-radius: 50px; display: none; align-items: center; gap: 15px; z-index: 10000; border: 2px solid #3b82f6; }
+        @media print { 
+            @page { size: A4 landscape; margin: 0.5cm; } 
+            body { display: block; background-color: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; zoom: 1; }
+            .arsiv-alt-panel, .no-print, #copyUI, #statusInfo { display: none !important; } 
+            .ana-icerik-sarma { padding: 0; }
+            .ana-konteyner { border: none; padding: 0; width: 100% !important; box-shadow: none; transform: scale(0.98); transform-origin: top center; }
+        }
     </style>
 </head>
-<body class="p-4">
+<body>
 
-<div class="ana-konteyner">
-    <div id="connStatus">● Bulut Bağlantısı Aktif</div>
-    <h1 class="text-2xl font-extrabold text-blue-900 border-b-4 border-blue-600 pb-2 mb-6">📉 TEKNİK KUMAŞ ANALİZ RAPORU</h1>
+<div class="ana-icerik-sarma">
+    <div id="copyUI" class="copy-panel no-print">
+        <span class="text-xs text-blue-300 font-bold uppercase">Kopyalanan:</span>
+        <span id="clipText" class="text-xl text-yellow-400 font-black"></span>
+        <button onclick="clearClip()" class="bg-red-600 px-3 py-1 rounded text-[10px] font-bold ml-2">İPTAL (ESC)</button>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 no-print bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm mb-8">
-        <input type="hidden" id="edit_id">
-        
-        <div class="md:col-span-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg p-2 bg-white relative h-48 cursor-pointer overflow-hidden" onclick="document.getElementById('fileInput').click()">
-            <span id="plusSign" class="text-4xl text-slate-300">+</span>
-            <img id="previewImg" class="hidden absolute inset-0 w-full h-full object-cover">
-            <input type="file" id="fileInput" class="hidden" accept="image/*" onchange="resimSec(this)">
+    <div class="ana-konteyner">
+        <div class="flex justify-between items-start border-b-2 pb-2 mb-2">
+            <div class="flex-none w-1/2 pr-4">
+                <div id="statusInfo" class="text-[10px] font-bold mb-1 text-green-600">● BULUT MODU AKTİF (FIREBASE)</div>
+                <input type="text" id="kumasIsmi" class="rapor-ismi" placeholder="KUMAŞ İSMİ GİRİNİZ">
+                <div class="flex gap-2">
+                    <div class="flex-1 space-y-1">
+                        <span class="info-label">İplik Bilgileri</span>
+                        <input type="text" class="info-input iplik-input" placeholder="İplik 1">
+                        <input type="text" class="info-input iplik-input" placeholder="İplik 2">
+                        <input type="text" class="info-input iplik-input" placeholder="İplik 3">
+                        <input type="text" class="info-input iplik-input" placeholder="İplik 4">
+                        <input type="text" class="info-input iplik-input" placeholder="İplik 5">
+                    </div>
+                    <div class="w-12 space-y-1 text-center">
+                        <span class="info-label">Oran</span>
+                        <input type="text" class="info-input oran-input text-center">
+                        <input type="text" class="info-input oran-input text-center">
+                        <input type="text" class="info-input oran-input text-center">
+                        <input type="text" class="info-input oran-input text-center">
+                        <input type="text" class="info-input oran-input text-center">
+                    </div>
+                    <div class="w-24 self-end">
+                        <div class="p-1 bg-blue-50 border border-blue-200 rounded">
+                            <span class="info-label text-blue-900 text-[8px]">Gramaj Ham</span>
+                            <input type="text" id="gramajInput" class="info-input font-black text-center text-xs h-8 border-blue-300" placeholder="GR/M2">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="info-label">Özel Notlar</span>
+                    <textarea id="ozelNotlar" class="not-area" placeholder="Rapor notlarını buraya ekleyin..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col items-end">
+                <div id="imageBox" onclick="document.getElementById('fileInput').click()">
+                    <span id="plusSign" class="text-gray-300 text-6xl font-thin">+</span>
+                    <img id="previewImg" src="" class="hidden">
+                </div>
+                <input type="file" id="fileInput" class="hidden" accept="image/*" onchange="previewFile()">
+            </div>
         </div>
 
-        <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label class="etiket">Müşteri / Firma</label><input type="text" id="musteri" class="input-alan"></div>
-            <div><label class="etiket">Kumaş Cinsi</label><input type="text" id="kumas_cinsi" class="input-alan"></div>
-            <div><label class="etiket">Pus / Feyn / İğne</label><input type="text" id="makine_bilgi" class="input-alan" placeholder="32 / 28 / 2880"></div>
-            <div><label class="etiket">Gramaj (m2)</label><input type="text" id="gramaj" class="input-alan"></div>
-            <div><label class="etiket">May Boyu</label><input type="text" id="may_boyu" class="input-alan"></div>
-            <div><label class="etiket">Tarih</label><input type="date" id="tarih" class="input-alan"></div>
+        <div class="mb-2">
+            <span class="info-label text-gray-700 mb-1">İĞNE DİZİLİMİ</span>
+            <div class="ayak-ana-blok rounded">
+                <div id="ab1" class="ayak-satir"></div>
+                <div id="ab2" class="ayak-satir"></div>
+            </div>
         </div>
 
-        <div class="md:col-span-4">
-            <label class="etiket">İplik Kompozisyonu ve Makine Ayarları</label>
-            <textarea id="notlar" class="input-alan h-20" placeholder="Örn: 30/1 Penye %96, 20 Denye Elastan %4... Lüper ayarı: 2.4mm"></textarea>
+        <div class="flex flex-col gap-1 overflow-hidden">
+            <table><thead id="h1"></thead><tbody id="b1"></tbody></table>
+            <table><thead id="h2"></thead><tbody id="b2"></tbody></table>
         </div>
 
-        <div class="md:col-span-4 flex gap-2">
-            <button onclick="kaydet()" id="anaButon" class="flex-1 bg-blue-700 text-white font-bold py-3 rounded-lg hover:bg-blue-800 transition">BULUTA GÖNDER / GÜNCELLE</button>
-            <button onclick="formTemizle()" class="bg-slate-500 text-white px-6 rounded-lg font-bold">TEMİZLE</button>
+        <div class="mt-4 flex gap-2 no-print border-t pt-4">
+            <button onclick="saveToCloud()" class="bg-blue-800 text-white px-5 py-2 rounded font-bold text-xs shadow-md">KAYDET</button>
+            <button onclick="saveAsNew()" class="bg-yellow-500 text-black px-5 py-2 rounded font-bold text-xs shadow-md">YENİ İSİMLE KAYDET</button>
+            <button onclick="window.print()" class="bg-emerald-600 text-white px-5 py-2 rounded font-bold text-xs shadow-md">YAZDIR</button>
+            <button onclick="resetForm()" class="bg-gray-500 text-white px-5 py-2 rounded font-bold text-xs">TEMİZLE / YENİ</button>
         </div>
     </div>
 
-    <div class="no-print mb-4">
-        <input type="text" id="arama" onkeyup="listele()" placeholder="Müşteri veya kumaş cinsine göre ara..." class="w-full p-3 border-2 border-blue-100 rounded-lg shadow-inner">
-    </div>
-
-    <div class="overflow-x-auto">
-        <table class="w-full border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
-            <thead class="bg-blue-900 text-white text-xs uppercase">
-                <tr>
-                    <th class="p-3">Görsel</th>
-                    <th class="p-3 text-left">Müşteri / Kumaş</th>
-                    <th class="p-3">Makine / Gr</th>
-                    <th class="p-3">May Boyu</th>
-                    <th class="p-3">Tarih</th>
-                    <th class="p-3 no-print">İşlem</th>
-                </tr>
-            </thead>
-            <tbody id="raporListesi"></tbody>
-        </table>
+    <div class="arsiv-alt-panel no-print">
+        <div class="arsiv-ust-bar">
+            <div class="arsiv-baslik">📂 BULUT KAYITLI RAPORLAR</div>
+            <input type="text" id="searchInput" onkeyup="filterArchive()" class="bg-slate-800 border border-slate-600 rounded px-4 py-1.5 text-xs w-80 text-white outline-none" placeholder="🔍 Kumaş ara...">
+        </div>
+        <div id="arsivListe" class="arsiv-liste"></div>
     </div>
 </div>
 
 <script>
-    // FİREBASE YAPILANDIRMASI
+    // Firebase Konfigürasyonu
     const firebaseConfig = {
         apiKey: "AIzaSyB4zJ0nY_06VnOh-JEmpfhw8EzrvbCiIBA",
         authDomain: "texerp-ea015.firebaseapp.com",
@@ -80,127 +140,184 @@
         projectId: "texerp-ea015",
         storageBucket: "texerp-ea015.firebasestorage.app",
         messagingSenderId: "531851332664",
-        appId: "1:531851332664:web:d2af3d69b6241d7fd8eacd"
+        appId: "1:531851332664:web:d2af3d69b6241d7fd8eacd",
+        measurementId: "G-7ZRW3S7LP0"
     };
 
+    // Firebase Başlatma
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const raporRef = db.ref("teknik_raporlar");
 
-    let currentImgBase64 = "";
+    let currentEditId = null, clipboard = null, currentImgData = "";
+    const colors = {'V': '#000', 'ᴧ': '#cc0000', '─': '#444', '┌': '#000', '': 'transparent'};
+    const ayakStilleri = {'': {r:'#fff',y:'#000'}, '1': {r:'#fde047',y:'#000'}, '2': {r:'#4ade80',y:'#000'}, '3': {r:'#3b82f6',y:'#fff'}, '4': {r:'#ef4444',y:'#fff'}};
 
-    function resimSec(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                currentImgBase64 = e.target.result;
-                document.getElementById('previewImg').src = currentImgBase64;
-                document.getElementById('previewImg').classList.remove('hidden');
-                document.getElementById('plusSign').classList.add('hidden');
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
+    window.onload = () => {
+        createAyak(1, 48, 'ab1'); createAyak(49, 96, 'ab2');
+        buildTable('h1', 'b1', 1, 48); buildTable('h2', 'b2', 49, 96);
+        listenCloud();
+    };
+
+    window.addEventListener('keydown', (e) => { if(e.key === 'Escape') clearClip(); });
+    function clearClip() { clipboard = null; document.getElementById('copyUI').style.display = 'none'; }
+
+    // Veritabanını dinle ve listeyi güncelle
+    function listenCloud() {
+        raporRef.on("value", (snapshot) => {
+            const data = snapshot.val();
+            const liste = document.getElementById('arsivListe');
+            liste.innerHTML = '';
+            if (data) {
+                const tumRaporlar = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                tumRaporlar.sort((a, b) => a.kumas.toLocaleUpperCase('tr-TR').localeCompare(b.kumas.toLocaleUpperCase('tr-TR'), 'tr'));
+                tumRaporlar.forEach(i => {
+                    const item = document.createElement('div');
+                    item.className = 'arsiv-item';
+                    item.onclick = () => { loadReport(i); window.scrollTo({top: 0, behavior: 'smooth'}); };
+                    item.innerHTML = `<span class="kumas-ad">${i.kumas}</span><button onclick="event.stopPropagation(); deleteReport('${i.id}')" class="sil-btn">×</button>`;
+                    liste.appendChild(item);
+                });
+            }
+        });
     }
 
-    function kaydet() {
-        const id = document.getElementById('edit_id').value;
-        const veri = {
-            musteri: document.getElementById('musteri').value.toUpperCase(),
-            kumas_cinsi: document.getElementById('kumas_cinsi').value.toUpperCase(),
-            makine_bilgi: document.getElementById('makine_bilgi').value,
-            gramaj: document.getElementById('gramaj').value,
-            may_boyu: document.getElementById('may_boyu').value,
-            tarih: document.getElementById('tarih').value,
-            notlar: document.getElementById('notlar').value,
-            img: currentImgBase64,
-            ts: Date.now()
+    function saveToCloud() {
+        const isim = document.getElementById('kumasIsmi').value;
+        if(!isim) return alert("Kumaş ismi girin!");
+
+        const data = {
+            kumas: isim,
+            iplikler: Array.from(document.querySelectorAll('.iplik-input')).map(i=>i.value),
+            oranlar: Array.from(document.querySelectorAll('.oran-input')).map(i=>i.value),
+            notlar: document.getElementById('ozelNotlar').value,
+            gramaj: document.getElementById('gramajInput').value,
+            ayaklar: Array.from(document.querySelectorAll('.ayak-box')).map(b=>b.innerText),
+            orgu: Array.from(document.querySelectorAll('.needle-cell')).map(c=>c.innerText),
+            img: currentImgData,
+            lastUpdate: Date.now()
         };
 
-        if(!veri.kumas_cinsi) return alert("Kumaş cinsi zorunludur!");
-
-        if(id) {
-            raporRef.child(id).set(veri).then(() => { alert("Güncellendi!"); formTemizle(); });
+        if(currentEditId) {
+            raporRef.child(currentEditId).set(data).then(() => alert("Güncellendi."));
         } else {
-            raporRef.push(veri).then(() => { formTemizle(); });
+            const newRef = raporRef.push();
+            currentEditId = newRef.key;
+            newRef.set(data).then(() => alert("Buluta kaydedildi."));
         }
     }
 
-    raporRef.on("value", (snap) => {
-        const data = snap.val();
-        listele(data);
-    });
-
-    function listele(data) {
-        const body = document.getElementById('raporListesi');
-        body.innerHTML = "";
-        const aramaSorgu = document.getElementById('arama').value.toLowerCase();
-
-        if(!data) return;
-
-        const liste = Object.keys(data).map(k => ({id:k, ...data[k]}));
-        liste.sort((a,b) => b.ts - a.ts);
-
-        liste.forEach(r => {
-            if(r.musteri.toLowerCase().includes(aramaSorgu) || r.kumas_cinsi.toLowerCase().includes(aramaSorgu)) {
-                body.innerHTML += `
-                    <tr class="border-b hover:bg-blue-50 transition">
-                        <td class="p-2 text-center">
-                            ${r.img ? `<img src="${r.img}" class="w-16 h-16 object-cover rounded shadow-sm mx-auto">` : `<div class="w-16 h-16 bg-gray-100 rounded mx-auto flex items-center justify-center text-xs text-gray-400">YOK</div>`}
-                        </td>
-                        <td class="p-3">
-                            <div class="font-bold text-blue-900">${r.kumas_cinsi}</div>
-                            <div class="text-xs text-gray-500">${r.musteri}</div>
-                        </td>
-                        <td class="p-3 text-center text-sm">${r.makine_bilgi} <br> <span class="font-bold">${r.gramaj} gr</span></td>
-                        <td class="p-3 text-center text-sm">${r.may_boyu}</td>
-                        <td class="p-3 text-center text-xs text-gray-600">${r.tarih}</td>
-                        <td class="p-3 no-print text-center">
-                            <button onclick="duzenle('${r.id}')" class="text-blue-600 font-bold mr-2">✏️</button>
-                            <button onclick="sil('${r.id}')" class="text-red-600 font-bold">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            }
+    function loadReport(itm) {
+        currentEditId = itm.id; 
+        document.getElementById('kumasIsmi').value = itm.kumas;
+        document.getElementById('gramajInput').value = itm.gramaj || "";
+        document.getElementById('ozelNotlar').value = itm.notlar || "";
+        document.querySelectorAll('.iplik-input').forEach((el,i)=>el.value=itm.iplikler[i]||"");
+        document.querySelectorAll('.oran-input').forEach((el,i)=>el.value=itm.oranlar[i]||"");
+        document.querySelectorAll('.ayak-box').forEach((el, i) => { 
+            el.innerText = itm.ayaklar ? itm.ayaklar[i] || "" : ""; 
+            updateAyakColor(el, el.innerText); 
         });
+        document.querySelectorAll('.needle-cell').forEach((el, i) => {
+            el.innerText = itm.orgu ? itm.orgu[i] || "" : "";
+            el.style.color = colors[el.innerText] || '#000';
+            el.style.backgroundColor = (el.innerText === '┌') ? '#4b5563' : '#fff';
+        });
+        if(itm.img) { 
+            currentImgData=itm.img; document.getElementById('previewImg').src=itm.img; 
+            document.getElementById('previewImg').classList.remove('hidden'); 
+            document.getElementById('plusSign').classList.add('hidden'); 
+        } else {
+            currentImgData=""; document.getElementById('previewImg').classList.add('hidden'); 
+            document.getElementById('plusSign').classList.remove('hidden');
+        }
     }
 
-    function duzenle(id) {
-        raporRef.child(id).once("value", (snap) => {
-            const r = snap.val();
-            document.getElementById('edit_id').value = id;
-            document.getElementById('musteri').value = r.musteri;
-            document.getElementById('kumas_cinsi').value = r.kumas_cinsi;
-            document.getElementById('makine_bilgi').value = r.makine_bilgi;
-            document.getElementById('gramaj').value = r.gramaj;
-            document.getElementById('may_boyu').value = r.may_boyu;
-            document.getElementById('tarih').value = r.tarih;
-            document.getElementById('notlar').value = r.notlar;
-            currentImgBase64 = r.img;
-            
-            if(r.img) {
-                document.getElementById('previewImg').src = r.img;
-                document.getElementById('previewImg').classList.remove('hidden');
-                document.getElementById('plusSign').classList.add('hidden');
-            }
-            document.getElementById('anaButon').innerText = "DEĞİŞİKLİKLERİ KAYDET";
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        });
-    }
-
-    function sil(id) {
-        if(confirm("Bu teknik raporu buluttan kalıcı olarak silmek istediğinize emin misiniz?")) {
+    function deleteReport(id) {
+        if(confirm("Bu raporu buluttan silmek istediğinize emin misiniz?")) {
             raporRef.child(id).remove();
+            if(currentEditId === id) resetForm();
         }
     }
 
-    function formTemizle() {
-        document.getElementById('edit_id').value = "";
-        document.querySelectorAll('.input-alan').forEach(i => i.value = "");
-        document.getElementById('previewImg').classList.add('hidden');
-        document.getElementById('plusSign').classList.remove('hidden');
-        currentImgBase64 = "";
-        document.getElementById('anaButon').innerText = "BULUTA GÖNDER / GÜNCELLE";
+    function createAyak(s, e, id) {
+        const b = document.getElementById(id);
+        for(let i=s; i<=e; i++) {
+            const x = document.createElement('div'); 
+            x.className='ayak-box';
+            x.contentEditable = "true";
+            x.onclick = function(ev) {
+                if(clipboard !== null) {
+                    this.innerText = clipboard;
+                    updateAyakColor(this, this.innerText);
+                }
+            };
+            x.oninput = function() {
+                if(this.innerText.length > 1) this.innerText = this.innerText.charAt(0);
+                updateAyakColor(this, this.innerText);
+            };
+            b.appendChild(x);
+        }
     }
+
+    function updateAyakColor(el, val) {
+        const s = ayakStilleri[val] || {r:'#fff', y:'#000'};
+        el.style.backgroundColor = s.r; 
+        el.style.color = s.y;
+    }
+
+    function buildTable(hId, bId, s, e) {
+        const h = document.getElementById(hId), b = document.getElementById(bId);
+        let hr = '<th class="row-label">S.</th>';
+        for(let i=s; i<=e; i++) hr += `<th class="num-header">${i}</th>`;
+        h.innerHTML = `<tr>${hr}</tr>`;
+        ['K1', 'K2', 'SEP', 'S1', 'S2', 'S3', 'S4'].forEach(label => {
+            let tr = document.createElement('tr');
+            if(label==='SEP') { tr.innerHTML=`<td colspan="${(e-s)+2}" style="height:4px"></td>`; }
+            else {
+                tr.innerHTML = `<td class="row-label">${label}</td>`;
+                for(let i=s; i<=e; i++) {
+                    let td = document.createElement('td'); 
+                    td.className = `needle-cell ${(label === 'K1' || label === 'K2') ? 'cell-normal' : 'cell-thick'}`;
+                    td.onclick = () => cellInteraction(td, label, 'left');
+                    td.oncontextmenu = (ev) => { ev.preventDefault(); cellInteraction(td, label, 'right'); };
+                    tr.appendChild(td);
+                }
+            }
+            b.appendChild(tr);
+        });
+    }
+
+    function cellInteraction(el, label, type) {
+        const symbols = (label === 'K1' || label === 'K2') ? ['', 'V', '─'] : ['', 'V', '─', 'ᴧ', '┌'];
+        if (type === 'right') {
+            clipboard = el.innerText;
+            document.getElementById('clipText').innerText = clipboard || '[BOŞ]';
+            document.getElementById('copyUI').style.display = 'flex';
+            return;
+        }
+        let sym = (clipboard !== null) ? clipboard : symbols[(symbols.indexOf(el.innerText) + 1) % symbols.length];
+        if ((label === 'K1' || label === 'K2') && !['', 'V', '─'].includes(sym)) return;
+        el.innerText = sym;
+        el.style.color = colors[sym] || '#000';
+        el.style.backgroundColor = (sym === '┌') ? '#4b5563' : '#fff';
+    }
+
+    function filterArchive() {
+        const v = document.getElementById('searchInput').value.toLocaleUpperCase('tr-TR');
+        document.querySelectorAll('.arsiv-item').forEach(item => {
+            item.style.display = item.querySelector('.kumas-ad').innerText.toLocaleUpperCase('tr-TR').includes(v) ? "flex" : "none";
+        });
+    }
+
+    function previewFile() {
+        const f = document.getElementById('fileInput').files[0]; const r = new FileReader();
+        r.onloadend = () => { currentImgData = r.result; document.getElementById('previewImg').src = r.result; document.getElementById('previewImg').classList.remove('hidden'); document.getElementById('plusSign').classList.add('hidden'); };
+        if(f) r.readAsDataURL(f);
+    }
+    
+    function saveAsNew() { currentEditId = null; saveToCloud(); }
+    function resetForm() { location.reload(); }
 </script>
 </body>
 </html>

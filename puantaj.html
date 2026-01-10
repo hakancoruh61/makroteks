@@ -3,61 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS Puantaj - Bulut Sistemi</title>
+    <title>MAKROTEKS | Puantaj Sistemi v9.2</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     
     <style>
-        :root { --border: #000; --gelmedi: #e74c3c; --tick: #000080; --mavi: #007bff; --yesil: #28a745; }
-        body { font-family: 'Calibri', 'Arial', sans-serif; background: #fff; margin: 0; padding: 5px; color: #000; }
-        .container { width: 100%; display: flex; flex-direction: column; align-items: center; }
-        h2 { text-align: center; font-size: 16px; margin: 10px 0; font-weight: bold; text-decoration: underline; text-transform: uppercase; }
-        .no-print { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; background: #f4f4f4; padding: 10px; border: 1px solid #ccc; border-radius: 4px; align-items: center; }
+        :root {
+            --primary: #1e293b;
+            --success-blue: #000080; 
+            --danger-bg: #cc0000;   
+            --bg: #f8fafc;
+            --table-border: #000000;
+        }
+
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background-color: var(--bg); 
+            margin: 0; padding: 10px; color: var(--primary);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 10px;
+        }
+
+        .report-title { text-transform: uppercase; font-weight: 800; font-size: 18px; margin: 0; }
+
+        .toolbar {
+            display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;
+            padding: 12px; background: #f1f5f9; border-radius: 6px; align-items: flex-end;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 4px; }
+        .input-group label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+
+        input, select, textarea { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; }
+
+        button { padding: 8px 12px; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-success { background: #10b981; color: white; }
+
+        .table-wrapper { width: 100%; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }
+        th, td { border: 1px solid var(--table-border); text-align: center; height: 22px; }
+        th { background: #f1f5f9; font-size: 9px; }
+
+        .name-col { text-align: left; padding-left: 5px; width: 140px; overflow: hidden; white-space: nowrap; }
+        .day-cell { width: 20px; cursor: pointer; font-weight: 900; font-size: 12px; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 5px; table-layout: fixed; }
-        th, td { border: 1px solid var(--border); padding: 2px; text-align: center; font-size: 11px; overflow: hidden; }
-        th { background: #f2f2f2; font-weight: bold; }
+        .present { color: var(--success-blue) !important; background-color: #f0f9ff; }
+        .absent { background-color: var(--danger-bg) !important; color: #ffffff !important; }
+
+        .summary-col { font-weight: 700; background: #f8fafc; width: 30px; }
+        .money-col { font-weight: 700; width: 70px; }
+
+        /* NOTLAR BÖLÜMÜ - 10 SATIR GÖRÜNÜMÜ */
+        .notes-box { 
+            margin-top: 15px; 
+            border: 1px solid var(--table-border); 
+            border-radius: 4px; 
+            width: 100%;
+        }
+        .notes-box h3 { 
+            margin: 0; 
+            font-size: 11px; 
+            background: #f1f5f9; 
+            padding: 5px 10px; 
+            border-bottom: 1px solid var(--table-border);
+        }
         
-        .name-col { width: 150px; text-align: left; padding-left: 5px; font-weight: bold; white-space: nowrap; }
-        .day-cell { cursor: pointer; font-weight: bold; width: 25px; }
-        .present { color: var(--tick); background: #e2f0d9; }
-        .absent { color: var(--gelmedi); background: #fbe5d6; }
-        .summary-col { background: #fff2cc; font-weight: bold; width: 40px; }
-        .calc-col { background: #deebf7; width: 60px; }
-        .calc-input { width: 90%; border: none; background: transparent; text-align: center; font-weight: bold; }
-        
-        button { padding: 5px 10px; cursor: pointer; font-weight: bold; }
-        .btn-ekle { background: var(--yesil); color: white; border: none; }
-        .btn-sil { background: var(--gelmedi); color: white; border: none; padding: 2px 5px; }
-        
-        @media print { .no-print { display: none !important; } body { margin: 0; padding: 0; } }
+        #aylikNot { 
+            width: 100%; 
+            border: none; 
+            background: transparent; 
+            font-size: 13px; 
+            line-height: 1.5em; /* Satır yüksekliği */
+            padding: 10px;
+            /* Varsayılan olarak 10 satır yüksekliği (10 * 1.5em = 15em) */
+            min-height: 15em; 
+            resize: none; 
+            box-sizing: border-box;
+            display: block;
+            overflow: hidden;
+            white-space: pre-wrap;
+        }
+
+        @media print {
+            @page { size: A4 portrait; margin: 10mm; }
+            .no-print { display: none !important; }
+            .container { width: 100%; max-width: 100%; padding: 0; border: none; }
+            body { background: white; padding: 0; }
+            .notes-box { border: 1px solid #000; break-inside: avoid; }
+            #aylikNot { 
+                height: auto !important; 
+                min-height: 15em; /* Çıktıda da en az 10 satırlık yer kaplar */
+                background-image: linear-gradient(#eee 1px, transparent 1px);
+                background-size: 100% 1.5em;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>MAKROTEKS PERSONEL PUANTAJ VE ÜRETİM TAKİBİ</h2>
+    <header>
+        <div><h1 id="dynamicTitle" class="report-title">MAKROTEKS PUANTAJ RAPORU</h1></div>
+        <button class="btn-main no-print" onclick="window.print()">🖨️ PDF / YAZDIR</button>
+    </header>
 
-    <div class="no-print">
-        <select id="aySecici" onchange="listele()"></select>
-        <input type="text" id="p_ad" placeholder="Personel Adı Soyadı">
-        <button class="btn-ekle" onclick="pEkle()">PERSONEL EKLE</button>
-        <button onclick="window.print()" style="background:#555; color:white; border:none;">YAZDIR (PDF)</button>
-        <div id="connStatus" style="color: green; font-size: 12px; margin-left: 10px;">● Bulut Aktif</div>
+    <div class="toolbar no-print">
+        <div class="input-group">
+            <label>Dönem</label>
+            <select id="aySecici" onchange="listele()"></select>
+        </div>
+        <div class="input-group">
+            <label>Personel Ekle</label>
+            <input type="text" id="p_ad" placeholder="AD SOYAD">
+        </div>
+        <button class="btn-success" onclick="pEkle()">Ekle</button>
+        <div style="flex-grow: 1;"></div>
+        <div class="input-group">
+            <label>Birim Fiyat (₺)</label>
+            <input type="number" id="birimFiyat" step="0.01" style="width:70px;" onchange="fiyatKaydet(this.value)">
+        </div>
     </div>
 
-    <table>
-        <thead>
-            <tr id="gunlerRow">
-                <th class="name-col">PERSONEL ADI SOYADI</th>
-                </tr>
-        </thead>
-        <tbody id="pBody"></tbody>
-    </table>
+    <div class="table-wrapper">
+        <table>
+            <thead><tr id="gunlerRow"><th class="name-col">PERSONEL ADI SOYADI</th></tr></thead>
+            <tbody id="pBody"></tbody>
+        </table>
+    </div>
+
+    <div class="notes-box">
+        <h3>📝 DÖNEM NOTLARI</h3>
+        <textarea id="aylikNot" oninput="boyutlandir(this)" onchange="notKaydet(this.value)" placeholder="Notlarınızı buraya yazın..."></textarea>
+    </div>
 </div>
 
 <script>
-    // FİREBASE YAPILANDIRMASI
     const firebaseConfig = {
         apiKey: "AIzaSyB4zJ0nY_06VnOh-JEmpfhw8EzrvbCiIBA",
         authDomain: "texerp-ea015.firebaseapp.com",
@@ -68,121 +156,89 @@
         appId: "1:531851332664:web:d2af3d69b6241d7fd8eacd"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
-    // Veri Referansları
-    const personelRef = db.ref("puantaj/personeller");
-    const veriRef = db.ref("puantaj/kayitlar"); // Yoklama ve Makine verileri
+    const pRef = db.ref("puantaj/personeller");
+    const vRef = db.ref("puantaj/kayitlar");
+    const aRef = db.ref("puantaj/ayarlar");
 
-    let personeller = {};
-    let tumVeriler = {};
+    let personeller = {}, tumVeriler = {}, ayarlar = {};
 
-    // Sayfa Başlatma
+    function boyutlandir(el) {
+        el.style.height = 'auto';
+        // scrollHeight eğer 10 satırdan (15em) büyükse o boyuta uzar
+        el.style.height = (el.scrollHeight) + 'px';
+    }
+
     window.onload = () => {
-        ay SeciciDoldur();
-        gunleriOlustur();
-        verileriYukle();
-    };
-
-    function aySeciciDoldur() {
-        const secici = document.getElementById('aySecici');
+        const s = document.getElementById('aySecici');
         const aylar = ["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
         const d = new Date();
-        const yil = d.getFullYear();
-        
         for(let i=0; i<12; i++) {
-            let option = document.createElement('option');
-            let ayIndex = (i + 1).toString().padStart(2, '0');
-            option.value = `${yil}-${ayIndex}`;
-            option.text = `${aylar[i]} ${yil}`;
-            if(i === d.getMonth()) option.selected = true;
-            secici.appendChild(option);
+            let opt = document.createElement('option');
+            opt.value = `${d.getFullYear()}-${(i+1).toString().padStart(2,'0')}`;
+            opt.text = `${aylar[i]} ${d.getFullYear()}`;
+            if(i === d.getMonth()) opt.selected = true;
+            s.appendChild(opt);
         }
-    }
 
-    function gunleriOlustur() {
         const row = document.getElementById('gunlerRow');
         for(let i=1; i<=31; i++) {
-            let th = document.createElement('th');
-            th.innerText = i;
-            th.style.width = "25px";
-            row.appendChild(th);
+            let th = document.createElement('th'); th.innerText = i; row.appendChild(th);
         }
-        row.innerHTML += `<th class="summary-col">TOP</th><th class="calc-col">MAKİNA</th><th class="no-print" style="width:30px">SİL</th>`;
-    }
+        row.innerHTML += `<th class="summary-col">GÜN</th><th class="summary-col">MAK.</th><th class="money-col">TUTAR</th><th class="no-print" style="width:25px"></th>`;
 
-    function verileriYukle() {
-        // Personelleri Dinle
-        personelRef.on("value", (snap) => {
-            personeller = snap.val() || {};
-            listele();
+        pRef.on("value", snap => { personeller = snap.val() || {}; listele(); });
+        vRef.on("value", snap => { tumVeriler = snap.val() || {}; listele(); });
+        aRef.on("value", snap => { 
+            ayarlar = snap.val() || {}; 
+            const ayKey = document.getElementById('aySecici').value;
+            document.getElementById('birimFiyat').value = ayarlar[ayKey]?.birimFiyat || 0;
+            const notArea = document.getElementById('aylikNot');
+            notArea.value = ayarlar[ayKey]?.notlar || "";
+            setTimeout(() => boyutlandir(notArea), 300);
+            listele(); 
         });
-
-        // Tüm Puantaj Verisini Dinle
-        veriRef.on("value", (snap) => {
-            tumVeriler = snap.val() || {};
-            listele();
-        });
-    }
-
-    function pEkle() {
-        const ad = document.getElementById('p_ad').value.trim().toUpperCase();
-        if(!ad) return;
-        personelRef.push({ ad: ad });
-        document.getElementById('p_ad').value = "";
-    }
+    };
 
     function listele() {
-        const ayKey = document.getElementById('aySecici').value;
+        const s = document.getElementById('aySecici');
+        const ayKey = s.value;
+        document.getElementById('dynamicTitle').innerText = `MAKROTEKS ${s.options[s.selectedIndex].text} PUANTAJ RAPORU`;
         const body = document.getElementById('pBody');
+        const bFiyat = ayarlar[ayKey]?.birimFiyat || 0;
         body.innerHTML = "";
 
         Object.keys(personeller).forEach(pId => {
             let p = personeller[pId];
+            let tGun = 0;
             let rowHtml = `<tr><td class="name-col">${p.ad}</td>`;
-            let toplamGun = 0;
-
             for(let i=1; i<=31; i++) {
-                let durum = (tumVeriler[ayKey] && tumVeriler[ayKey][pId] && tumVeriler[ayKey][pId][i]) ? tumVeriler[ayKey][pId][i] : "";
-                let cls = "day-cell";
-                let content = "";
-                
-                if(durum === "V") { content = "✓"; cls += " present"; toplamGun++; }
-                else if(durum === "X") { content = "X"; cls += " absent"; }
-                
-                rowHtml += `<td class="${cls}" onclick="yoklamaDegistir('${pId}', ${i})">${content}</td>`;
+                let durum = (tumVeriler[ayKey]?.[pId]?.[i]) || "";
+                let cls = durum === 'V' ? 'present' : (durum === 'X' ? 'absent' : '');
+                rowHtml += `<td class="day-cell ${cls}" onclick="yoklamaDegistir('${pId}', ${i})">${durum==='V'?'✓':(durum==='X'?'X':'')}</td>`;
+                if(durum === 'V') tGun++;
             }
-
-            let makina = (tumVeriler[ayKey] && tumVeriler[ayKey][pId] && tumVeriler[ayKey][pId]['makina']) ? tumVeriler[ayKey][pId]['makina'] : 0;
-            
-            rowHtml += `<td class="summary-col">${toplamGun}</td>`;
-            rowHtml += `<td class="calc-col"><input type="number" class="calc-input" value="${makina}" onchange="makinaKaydet('${pId}', this.value)"></td>`;
-            rowHtml += `<td class="no-print"><button class="btn-sil" onclick="pSil('${pId}')">×</button></td></tr>`;
+            let mVal = (tumVeriler[ayKey]?.[pId]?.makina) || 0;
+            let tutar = (mVal * bFiyat).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+            rowHtml += `<td class="summary-col">${tGun}</td>`;
+            rowHtml += `<td class="summary-col"><input type="number" step="0.1" value="${mVal}" onchange="makinaKaydet('${pId}', this.value)" style="width:100%; border:none; text-align:center; font-size:10px; font-weight:bold; background:transparent;"></td>`;
+            rowHtml += `<td class="money-col">₺${tutar}</td>`;
+            rowHtml += `<td class="no-print"><button onclick="pSil('${pId}')" style="background:none; color:red; font-weight:bold;">×</button></td></tr>`;
             body.innerHTML += rowHtml;
         });
     }
 
     function yoklamaDegistir(pId, gun) {
         const ayKey = document.getElementById('aySecici').value;
-        let mevcut = (tumVeriler[ayKey] && tumVeriler[ayKey][pId] && tumVeriler[ayKey][pId][gun]) ? tumVeriler[ayKey][pId][gun] : "";
-        let yeni = mevcut === "V" ? "X" : (mevcut === "X" ? "" : "V");
-        
-        db.ref(`puantaj/kayitlar/${ayKey}/${pId}/${gun}`).set(yeni);
+        let mev = (tumVeriler[ayKey]?.[pId]?.[gun]) || "";
+        db.ref(`puantaj/kayitlar/${ayKey}/${pId}/${gun}`).set(mev === "V" ? "X" : (mev === "X" ? "" : "V"));
     }
-
-    function makinaKaydet(pId, deger) {
-        const ayKey = document.getElementById('aySecici').value;
-        db.ref(`puantaj/kayitlar/${ayKey}/${pId}/makina`).set(parseFloat(deger) || 0);
-    }
-
-    function pSil(id) {
-        if(confirm("Bu personeli ve tüm kayıtlarını silmek istediğinize emin misiniz?")) {
-            personelRef.child(id).remove();
-            // Not: Personel silindiğinde o aya ait veriler veritabanında kalır ama listelenmez. 
-            // Tam temizlik için kayitlar altından da silinebilir.
-        }
-    }
+    function makinaKaydet(pId, val) { db.ref(`puantaj/kayitlar/${document.getElementById('aySecici').value}/${pId}/makina`).set(parseFloat(val) || 0); }
+    function fiyatKaydet(val) { db.ref(`puantaj/ayarlar/${document.getElementById('aySecici').value}/birimFiyat`).set(parseFloat(val) || 0); }
+    function notKaydet(val) { db.ref(`puantaj/ayarlar/${document.getElementById('aySecici').value}/notlar`).set(val); }
+    function pEkle() { const inp = document.getElementById('p_ad'); if(inp.value) { pRef.push({ ad: inp.value.toUpperCase() }); inp.value = ""; } }
+    function pSil(id) { if(confirm("Silinsin mi?")) pRef.child(id).remove(); }
 </script>
 </body>
 </html>

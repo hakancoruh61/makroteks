@@ -3,69 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS Gider Yönetimi - Bulut Sistemi</title>
+    <title>MAKROTEKS Gider Yönetimi - Dikey Rapor</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     
     <style>
         :root { --primary: #2c3e50; --danger: #dc3545; --success: #28a745; --blue: #007bff; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 15px; color: #333; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
-        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; background: #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box; }
-        button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 10px; color: #333; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        /* Dinamik Başlık Stili */
+        #raporBaslik { text-align: center; color: var(--primary); margin: 0 0 15px 0; border-bottom: 2px solid var(--primary); padding-bottom: 5px; font-size: 20px; text-transform: uppercase; font-weight: bold; }
+        
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; background: #eee; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; font-size: 12px; }
+        label { font-size: 11px; font-weight: bold; margin-bottom: 3px; display: block; }
+        
+        button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; font-size: 12px; }
         .btn-save { background: var(--success); }
         .btn-update { background: var(--blue); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background: var(--primary); color: white; }
-        .total-box { font-size: 20px; font-weight: bold; text-align: right; margin-top: 15px; color: var(--danger); padding: 10px; border-top: 2px solid #333; }
-        #connStatus { float: right; font-size: 12px; color: green; font-weight: bold; }
-        @media print { .no-print { display: none !important; } }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 11px; table-layout: fixed; }
+        th, td { border: 1px solid #999; padding: 6px 4px; text-align: left; overflow: hidden; word-wrap: break-word; }
+        th { background: #f2f2f2; color: #333; font-weight: bold; }
+        
+        th:nth-child(1) { width: 85px; }
+        th:nth-child(2) { width: 100px; }
+        th:nth-child(4) { width: 90px; }
+        th:nth-child(5) { width: 80px; }
+        th:nth-child(6) { width: 60px; }
+
+        .total-box { font-size: 16px; font-weight: bold; text-align: right; margin-top: 10px; color: var(--danger); padding: 8px; border-top: 2px solid #333; }
+        #connStatus { float: right; font-size: 10px; color: green; font-weight: bold; }
+
+        @media print {
+            @page { size: portrait; margin: 1cm; }
+            body { background: white; margin: 0; }
+            .container { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 0; }
+            .no-print { display: none !important; }
+            th { background: #eee !important; color: black !important; -webkit-print-color-adjust: exact; }
+            table { font-size: 10px; }
+            td, th { border: 1px solid #000 !important; }
+            .total-box { border-top: 1px solid #000; color: black; }
+            #raporBaslik { margin-top: 10px; font-size: 18px; border-bottom: 1px solid #000; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="connStatus">● Bulut Aktif</div>
-    <h2>💸 İŞLETME GİDER VE HARCAMA YÖNETİMİ</h2>
+    <h2 id="raporBaslik">GİDER VE HARCAMA RAPORU</h2>
 
     <div class="form-row no-print">
         <input type="hidden" id="edit_id">
+        <div><label>Tarih</label><input type="date" id="g_tarih_input"></div>
+        <div><label>İlgili</label><input type="text" id="g_personel"></div>
+        <div><label>Açıklama</label><input type="text" id="g_aciklama"></div>
+        <div><label>Tutar (TL)</label><input type="number" id="g_tutar" step="0.01"></div>
         <div>
-            <label style="font-size: 12px; font-weight: bold;">Harcama Yapan / İlgili</label>
-            <input type="text" id="g_personel" placeholder="Örn: Ahmet Yılmaz">
-        </div>
-        <div>
-            <label style="font-size: 12px; font-weight: bold;">Açıklama</label>
-            <input type="text" id="g_aciklama" placeholder="Örn: Yemek Bedeli">
-        </div>
-        <div>
-            <label style="font-size: 12px; font-weight: bold;">Tutar (TL)</label>
-            <input type="number" id="g_tutar" placeholder="0.00">
-        </div>
-        <div>
-            <label style="font-size: 12px; font-weight: bold;">Kategori</label>
+            <label>Ödeme Türü</label>
             <select id="g_kategori">
-                <option value="Yemek">Yemek</option>
-                <option value="Yol/Yakıt">Yol/Yakıt</option>
-                <option value="Bakım/Onarım">Bakım/Onarım</option>
-                <option value="Hırdavat">Hırdavat</option>
+                <option value="Nakit Ödeme">Nakit Ödeme</option>
+                <option value="Kredi Kartı">Kredi Kartı</option>
+                <option value="Çek Ödemesi">Çek Ödemesi</option>
                 <option value="Diğer">Diğer</option>
             </select>
         </div>
         <div style="display: flex; align-items: flex-end;">
-            <button class="btn-save" id="btn_ana" onclick="kaydet()" style="width: 100%;">GİDERİ KAYDET</button>
+            <button class="btn-save" id="btn_ana" onclick="kaydet()" style="width: 100%;">KAYDET</button>
         </div>
     </div>
 
-    <div class="no-print" style="margin-bottom: 15px;">
-        <label>Dönem Filtresi:</label>
-        <select id="filtre_ay" onchange="listele()" style="width: 200px; display: inline-block; margin-left: 10px;">
-            <option value="all">Tüm Zamanlar</option>
-        </select>
-        <button onclick="window.print()" style="background: #555; margin-left: 10px;">YAZDIR (PDF)</button>
+    <div class="no-print" style="margin-bottom: 15px; background: #fff3cd; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+        <label style="margin:0">DÖNEM SEÇİN:</label>
+        <select id="filtre_ay" onchange="listele()" style="width: 180px; font-weight: bold; text-transform: uppercase;"></select>
+        <button onclick="window.print()" style="background: #333;">🖨️ RAPORU YAZDIR</button>
     </div>
 
     <table>
@@ -74,7 +87,7 @@
                 <th>Tarih</th>
                 <th>İlgili</th>
                 <th>Açıklama</th>
-                <th>Kategori</th>
+                <th>Ödeme Türü</th>
                 <th>Tutar</th>
                 <th class="no-print">İşlem</th>
             </tr>
@@ -86,7 +99,6 @@
 </div>
 
 <script>
-    // FİREBASE YAPILANDIRMASI
     const firebaseConfig = {
         apiKey: "AIzaSyB4zJ0nY_06VnOh-JEmpfhw8EzrvbCiIBA",
         authDomain: "texerp-ea015.firebaseapp.com",
@@ -101,105 +113,110 @@
     const db = firebase.database();
     const giderRef = db.ref("giderler");
 
+    window.onload = function() {
+        document.getElementById('g_tarih_input').value = new Date().toISOString().split('T')[0];
+    };
+
     function kaydet() {
         const id = document.getElementById('edit_id').value;
+        const tarihVal = document.getElementById('g_tarih_input').value;
         const personel = document.getElementById('g_personel').value.toUpperCase();
         const aciklama = document.getElementById('g_aciklama').value.toUpperCase();
         const tutar = parseFloat(document.getElementById('g_tutar').value) || 0;
         const kategori = document.getElementById('g_kategori').value;
-        const d = new Date();
+
+        if(!tarihVal || !personel || tutar <= 0) return alert("Eksik bilgi!");
+
+        const d = new Date(tarihVal);
         const ayKey = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
-
-        if(!personel || tutar <= 0) return alert("Lütfen isim ve tutar giriniz!");
-
         const veri = {
             personel, aciklama, tutar, kategori,
             ay: ayKey,
-            tarih: d.toLocaleString('tr-TR'),
-            ts: Date.now()
+            tarih: d.toLocaleDateString('tr-TR'),
+            ts: d.getTime()
         };
 
         if(id) {
-            giderRef.child(id).set(veri).then(() => {
-                alert("Güncellendi");
-                formTemizle();
-            });
+            giderRef.child(id).set(veri).then(() => { formTemizle(); });
         } else {
-            giderRef.push(veri).then(() => {
-                formTemizle();
-            });
+            giderRef.push(veri).then(() => { formTemizle(); });
         }
     }
 
+    let tumVeriler = {};
     giderRef.on("value", (snap) => {
-        const data = snap.val();
-        listele(data);
-        donemleriGuncelle(data);
+        tumVeriler = snap.val() || {};
+        donemleriGuncelle();
+        listele();
     });
 
-    function listele(data) {
-        if(!data) data = {};
+    function listele() {
         const body = document.getElementById('giderBody');
-        const filtre = document.getElementById('filtre_ay').value;
+        const filtreSelect = document.getElementById('filtre_ay');
+        const filtre = filtreSelect.value;
+        const baslikElement = document.getElementById('raporBaslik');
+        
+        // Başlığı Güncelle
+        if (filtre === "all") {
+            baslikElement.innerText = "TÜM ZAMANLAR GİDER VE HARCAMA RAPORU";
+        } else {
+            const seciliMetin = filtreSelect.options[filtreSelect.selectedIndex].text;
+            baslikElement.innerText = `${seciliMetin} GİDER VE HARCAMA RAPORU`;
+        }
+
         body.innerHTML = "";
         let toplam = 0;
 
-        const liste = Object.keys(data).map(k => ({id: k, ...data[k]}));
-        liste.sort((a,b) => b.ts - a.ts);
+        const liste = Object.keys(tumVeriler).map(k => ({id: k, ...tumVeriler[k]}));
+        liste.sort((a,b) => (a.ts || 0) - (b.ts || 0));
 
         liste.forEach(g => {
             if(filtre !== "all" && g.ay !== filtre) return;
-
             toplam += g.tutar;
             body.innerHTML += `
                 <tr>
-                    <td><small>${g.tarih}</small></td>
-                    <td><b>${g.personel}</b></td>
+                    <td>${g.tarih}</td>
+                    <td>${g.personel}</td>
                     <td>${g.aciklama}</td>
-                    <td><span style="font-size:11px; background:#eee; padding:2px 5px; border-radius:3px;">${g.kategori}</span></td>
+                    <td>${g.kategori}</td>
                     <td style="font-weight:bold">${g.tutar.toLocaleString('tr-TR', {minimumFractionDigits:2})} ₺</td>
                     <td class="no-print">
-                        <button onclick="duzenle('${g.id}')" style="background:var(--blue); padding:3px 8px;">✏️</button>
-                        <button onclick="sil('${g.id}')" style="background:var(--danger); padding:3px 8px;">🗑️</button>
+                        <button onclick="duzenle('${g.id}')" style="background:var(--blue); padding:2px 5px;">✏️</button>
+                        <button onclick="sil('${g.id}')" style="background:var(--danger); padding:2px 5px;">🗑️</button>
                     </td>
-                </tr>
-            `;
+                </tr>`;
         });
-
-        document.getElementById('toplamAlan').innerText = `TOPLAM: ${toplam.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL`;
+        document.getElementById('toplamAlan').innerText = `GENEL TOPLAM: ${toplam.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL`;
     }
 
-    function donemleriGuncelle(data) {
-        if(!data) return;
+    function donemleriGuncelle() {
         const select = document.getElementById('filtre_ay');
-        const mevcut = select.value;
-        const donemler = [...new Set(Object.values(data).map(v => v.ay))].sort().reverse();
+        const mevcut = select.value || "all";
+        const donemler = [...new Set(Object.values(tumVeriler).map(v => v.ay))].filter(Boolean).sort().reverse();
         
-        select.innerHTML = '<option value="all">Tüm Zamanlar</option>';
+        let options = '<option value="all">TÜM ZAMANLAR</option>';
         donemler.forEach(d => {
             const [y, m] = d.split('-');
-            const ayAd = new Date(y, m-1).toLocaleString('tr-TR', {month:'long', year:'numeric'});
-            select.innerHTML += `<option value="${d}" ${d === mevcut ? 'selected' : ''}>${ayAd}</option>`;
+            const ayAd = new Date(y, m-1).toLocaleString('tr-TR', {month:'long', year:'numeric'}).toUpperCase();
+            options += `<option value="${d}" ${d === mevcut ? 'selected' : ''}>${ayAd}</option>`;
         });
+        select.innerHTML = options;
     }
 
     function duzenle(id) {
-        giderRef.child(id).once("value", (snap) => {
-            const g = snap.val();
-            document.getElementById('edit_id').value = id;
-            document.getElementById('g_personel').value = g.personel;
-            document.getElementById('g_aciklama').value = g.aciklama;
-            document.getElementById('g_tutar').value = g.tutar;
-            document.getElementById('g_kategori').value = g.kategori;
-            document.getElementById('btn_ana').innerText = "DEĞİŞİKLİKLERİ KAYDET";
-            document.getElementById('btn_ana').className = "btn-update";
-        });
+        const g = tumVeriler[id];
+        document.getElementById('edit_id').value = id;
+        if(g.ts) document.getElementById('g_tarih_input').value = new Date(g.ts).toISOString().split('T')[0];
+        document.getElementById('g_personel').value = g.personel;
+        document.getElementById('g_aciklama').value = g.aciklama;
+        document.getElementById('g_tutar').value = g.tutar;
+        document.getElementById('g_kategori').value = g.kategori;
+        document.getElementById('btn_ana').innerText = "GÜNCELLE";
+        document.getElementById('btn_ana').className = "btn-update";
     }
 
     function sil(id) {
-        if(confirm("Bu gider kaydını silmek istediğinize emin misiniz?")) {
-            giderRef.child(id).remove();
-        }
+        if(confirm("Silinsin mi?")) giderRef.child(id).remove();
     }
 
     function formTemizle() {
@@ -207,7 +224,8 @@
         document.getElementById('g_personel').value = "";
         document.getElementById('g_aciklama').value = "";
         document.getElementById('g_tutar').value = "";
-        document.getElementById('btn_ana').innerText = "GİDERİ KAYDET";
+        document.getElementById('g_tarih_input').value = new Date().toISOString().split('T')[0];
+        document.getElementById('btn_ana').innerText = "KAYDET";
         document.getElementById('btn_ana').className = "btn-save";
     }
 </script>

@@ -17,32 +17,55 @@
             --border-color: #dee2e6;
         }
 
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background-color: var(--bg-light); color: #343a40; }
-        .container { max-width: 1200px; margin: auto; background: var(--bg-white); padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        
-        h2 { color: var(--primary-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 10px; margin-top: 30px; }
-        
-        .converter-box { display: flex; justify-content: space-around; background: #e9ecef; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 1px solid #ced4da; }
-        .conv-input { width: 100px; padding: 8px; border-radius: 5px; border: 1px solid #adb5bd; font-weight: bold; text-align: center; }
+        /* PC EKRANI İÇİN KÜÇÜLTME AYARI */
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            padding: 10px; 
+            background-color: var(--bg-light); 
+            color: #343a40;
+            zoom: 0.85; /* Sayfayı %85 oranında küçültür */
+        }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-        th, td { padding: 12px; border: 1px solid var(--border-color); text-align: center; }
-        th { background-color: var(--primary-color); color: white; font-size: 13px; text-transform: uppercase; }
-        input[type="text"], input[type="number"] { width: 90%; padding: 8px; border: 1px solid #ced4da; border-radius: 5px; text-align: center; font-size: 14px; }
+        .container { 
+            max-width: 950px; /* Genişliği daraltarak toplu durmasını sağladık */
+            margin: auto; 
+            background: var(--bg-white); 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+        }
+        
+        h1 { font-size: 22px; margin-bottom: 10px; }
+        h2 { color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; margin-top: 20px; font-size: 18px; }
+        
+        .converter-box { display: flex; justify-content: center; gap: 20px; background: #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ced4da; }
+        .conv-input { width: 80px; padding: 6px; border-radius: 5px; border: 1px solid #adb5bd; font-weight: bold; text-align: center; }
 
-        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; margin: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 13px; }
+        th, td { padding: 8px; border: 1px solid var(--border-color); text-align: center; }
+        th { background-color: var(--primary-color); color: white; text-transform: uppercase; }
+        input[type="text"], input[type="number"] { width: 90%; padding: 6px; border: 1px solid #ced4da; border-radius: 5px; text-align: center; font-size: 13px; }
+
+        .btn { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; margin: 3px; font-size: 12px; }
         .btn-add { background: var(--primary-color); color: white; }
-        .btn-calc { background: var(--accent-color); color: white; font-size: 1.1rem; width: 100%; margin-top: 20px; }
-        .btn-danger { background: #dc3545; color: white; }
+        .btn-calc { background: var(--accent-color); color: white; font-size: 1rem; width: 100%; margin-top: 15px; }
+        .btn-danger { background: #dc3545; color: white; padding: 5px 10px; }
         .btn-save { background: #6f42c1; color: white; }
 
-        .yuzde-kutusu { font-weight: 800; color: #1e3a8a; background: #dbeafe; padding: 5px; border-radius: 4px; display: block; min-height: 20px; }
+        .yuzde-kutusu { font-weight: 800; color: #1e3a8a; background: #dbeafe; padding: 4px; border-radius: 4px; display: block; min-height: 18px; }
 
-        #sonuc-alani { margin-top: 30px; padding: 25px; border: 2px solid var(--accent-color); border-radius: 10px; background-color: #f0fff4; }
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; background: #fff; margin-bottom: 5px; border-radius: 5px; }
+        #sonuc-alani { margin-top: 20px; padding: 15px; border: 2px solid var(--accent-color); border-radius: 10px; background-color: #f0fff4; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: #fff; margin-bottom: 5px; border-radius: 5px; font-size: 13px; }
         
-        #connStatus { float: right; font-size: 12px; color: green; font-weight: bold; }
-        @media print { .no-print { display: none !important; } }
+        #connStatus { float: right; font-size: 11px; color: green; font-weight: bold; }
+
+        /* YAZDIRMA SIRASINDA KÜÇÜLTME İPTAL EDİLİR (Netlik için) */
+        @media print { 
+            body { zoom: 1; padding: 0; }
+            .no-print { display: none !important; } 
+            .container { max-width: 100%; box-shadow: none; border: none; }
+        }
     </style>
 </head>
 <body>
@@ -53,7 +76,7 @@
 
     <div class="converter-box no-print">
         <div>NE: <input type="number" id="inputNe" class="conv-input" oninput="convert('ne')"></div>
-        <div style="font-size: 24px;">⇄</div>
+        <div style="font-size: 20px; align-self: center;">⇄</div>
         <div>DENYE: <input type="number" id="inputDenye" class="conv-input" oninput="convert('denye')"></div>
     </div>
 
@@ -61,7 +84,7 @@
     <table id="iplik-tablosu">
         <thead>
             <tr>
-                <th>İplik Adı (Pamuk, Pes vb.)</th>
+                <th>İplik Adı</th>
                 <th>No (Ne/Denye)</th>
                 <th>CM</th>
                 <th>Sistem Adeti</th>
@@ -73,7 +96,7 @@
         </tbody>
     </table>
     
-    <div class="no-print" style="display:flex; gap:10px; margin-top: 15px;">
+    <div class="no-print" style="display:flex; gap:8px; margin-top: 10px;">
         <button class="btn btn-add" onclick="satirEkle()">+ Yeni İplik Ekle</button>
         <button class="btn btn-save" onclick="bulutaKaydet()">☁️ Buluta Kaydet</button>
     </div>
@@ -81,9 +104,9 @@
     <button class="btn btn-calc no-print" onclick="hesapla()">HESAPLA VE ANALİZ ET</button>
 
     <div id="sonuc-alani" style="display:none;">
-        <h3 style="margin-top:0; color: var(--accent-color);">Karışım Analizi:</h3>
-        <div id="sonuc-metni" style="font-size: 1.3rem; line-height: 1.6;"></div>
-        <button class="btn btn-secondary no-print" style="margin-top:20px;" onclick="window.print()">YAZDIR / PDF</button>
+        <h3 style="margin:0; color: var(--accent-color); font-size: 16px;">Karışım Analizi:</h3>
+        <div id="sonuc-metni" style="font-size: 1.1rem; line-height: 1.4;"></div>
+        <button class="btn no-print" style="margin-top:10px; background: var(--secondary-color); color: white;" onclick="window.print()">YAZDIR / PDF</button>
     </div>
 
     <h2 class="no-print">Bulut Kayıt Arşivi</h2>
@@ -128,32 +151,27 @@
         let toplamAgirlik = 0;
         let bilesenler = [];
 
-        // Önce ağırlıkları hesapla
         satirlar.forEach(tr => {
             const ad = tr.querySelector('.i-ad').value;
             const no = parseFloat(tr.querySelector('.i-no').value);
-            const cm = parseFloat(tr.querySelector('.i-kat').value); // Eski Kat kolonu CM oldu
-            const sistemAdet = parseFloat(tr.querySelector('.i-oran').value); // Eski Oran kolonu Sistem Adeti oldu
+            const cm = parseFloat(tr.querySelector('.i-kat').value);
+            const sistemAdet = parseFloat(tr.querySelector('.i-oran').value);
 
             if (ad && no && sistemAdet && cm) {
-                // Formül: (CM * Sistem Adeti) / İplik Nosu
                 const agirlik = (cm * sistemAdet) / no;
                 toplamAgirlik += agirlik;
                 bilesenler.push({ tr, ad, agirlik });
             }
         });
 
-        if (bilesenler.length === 0) return alert("Lütfen verileri eksiksiz girin!");
+        if (bilesenler.length === 0) return alert("Verileri girin!");
 
-        // Yüzdeleri tabloya ve sonuç alanına yazdır
-        let sonucHTML = "<strong>Kumaş Kompozisyonu:</strong><br><ul style='margin-top:10px;'>";
-        
+        let sonucHTML = "<strong>Kumaş Kompozisyonu:</strong><br><ul>";
         bilesenler.forEach(b => {
             const yuzde = ((b.agirlik / toplamAgirlik) * 100).toFixed(1);
             b.tr.querySelector('.yuzde-kutusu').innerText = "% " + yuzde;
             sonucHTML += `<li>%${yuzde} ${b.ad.toUpperCase()}</li>`;
         });
-        
         sonucHTML += "</ul>";
         document.getElementById('sonuc-metni').innerHTML = sonucHTML;
         document.getElementById('sonuc-alani').style.display = 'block';
@@ -162,18 +180,16 @@
     function bulutaKaydet() {
         const baslik = prompt("Kayıt başlığı:");
         if(!baslik) return;
-
         const satirlar = document.querySelectorAll('#iplik-tablosu tbody tr');
         let veriler = [];
         satirlar.forEach(tr => {
             veriler.push({
                 ad: tr.querySelector('.i-ad').value,
                 no: tr.querySelector('.i-no').value,
-                kat: tr.querySelector('.i-kat').value, // CM bilgisini saklar
-                oran: tr.querySelector('.i-oran').value // Sistem Adeti bilgisini saklar
+                kat: tr.querySelector('.i-kat').value,
+                oran: tr.querySelector('.i-oran').value
             });
         });
-
         oranRef.push({
             baslik: baslik,
             tarih: new Date().toLocaleString('tr-TR'),
@@ -187,7 +203,6 @@
         liste.innerHTML = "";
         const data = snap.val();
         if(!data) return;
-
         Object.keys(data).map(k => ({id: k, ...data[k]}))
             .sort((a,b) => b.timestamp - a.timestamp)
             .forEach(k => {

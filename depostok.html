@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS İplik Stok v8.5 - Hızlı Miktar Güncelleme</title>
+    <title>MAKROTEKS İplik Stok v8.6 - Hatasız Filtreleme</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -35,7 +35,6 @@
         .lot-container { padding: 15px; background: #fff; border: 2px solid var(--primary); border-radius: 8px; margin: 5px; text-align: left; }
         .lot-badge { display: inline-block; background: var(--info); color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-right: 10px; font-weight: bold; }
         
-        /* Hızlı İşlem Butonları */
         .btn-plus { background: var(--success); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
         .btn-minus { background: var(--warning); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
         
@@ -124,6 +123,9 @@
     const db = firebase.database();
     const iplikRef = db.ref("iplik_stoklari");
 
+    // Tüm veriyi hafızada tutmak için global değişken
+    let tumVeriler = {};
+
     document.getElementById('inp_tarih').valueAsDate = new Date();
 
     function kaydet() {
@@ -146,24 +148,31 @@
         }
     }
 
+    // Firebase'den veri geldiğinde tetiklenir
     iplikRef.on("value", (snap) => {
-        const veriler = snap.val();
-        listele(veriler);
-        filtreGuncelle(veriler);
+        tumVeriler = snap.val() || {};
+        filtreGuncelle(tumVeriler);
+        listele();
     });
 
-    function listele(veriler) {
+    function listele() {
         const body = document.getElementById('stokBody');
         const filtre = document.getElementById('filtre_firma').value;
         body.innerHTML = "";
         let genelToplamKG = 0;
 
-        if(!veriler) return;
+        if(!tumVeriler || Object.keys(tumVeriler).length === 0) {
+            document.getElementById('genelToplam').innerText = "0.00 KG";
+            return;
+        }
 
-        const liste = Object.keys(veriler).map(k => ({id: k, ...veriler[k]}));
+        const liste = Object.keys(tumVeriler).map(k => ({id: k, ...tumVeriler[k]}));
         
         const gruplanmis = {};
         liste.forEach(item => {
+            // Filtreleme kontrolü
+            if(filtre && filtre !== "TÜMÜ" && item.firma !== filtre) return;
+
             const anahtar = `${item.firma}-${item.cinsi}`;
             if(!gruplanmis[anahtar]) {
                 gruplanmis[anahtar] = {
@@ -179,9 +188,14 @@
             if(new Date(item.tarih) > new Date(gruplanmis[anahtar].tarih)) gruplanmis[anahtar].tarih = item.tarih;
         });
 
-        Object.values(gruplanmis).sort((a,b) => new Date(b.tarih) - new Date(a.tarih)).forEach((g, index) => {
-            if(filtre && filtre !== "TÜMÜ" && g.firma !== filtre) return;
+        const gruplanmisDizi = Object.values(gruplanmis);
+        if(gruplanmisDizi.length === 0) {
+            body.innerHTML = "<tr><td colspan='5'>Seçili firmaya ait kayıt bulunamadı.</td></tr>";
+            document.getElementById('genelToplam').innerText = "0.00 KG";
+            return;
+        }
 
+        gruplanmisDizi.sort((a,b) => new Date(b.tarih) - new Date(a.tarih)).forEach((g, index) => {
             genelToplamKG += g.toplamKg;
             const rowId = `detail-${index}`;
 
@@ -203,10 +217,10 @@
                                     <div style="display:flex; align-items:center; gap:10px;">
                                         <b style="color:var(--secondary); min-width:80px; text-align:right;">${l.kg.toLocaleString('tr-TR', {minimumFractionDigits:2})} KG</b>
                                         <div class="no-print">
-                                            <button class="btn-plus" onclick="miktarDegistir('${l.id}', 'artir')" title="Miktar Ekle"><i class="fa-solid fa-plus"></i></button>
-                                            <button class="btn-minus" onclick="miktarDegistir('${l.id}', 'azalt')" title="Miktar Düş"><i class="fa-solid fa-minus"></i></button>
-                                            <button onclick="duzenle('${l.id}')" style="background:none; border:none; cursor:pointer; margin-left:10px;" title="Düzenle">✏️</button>
-                                            <button onclick="sil('${l.id}')" style="background:none; border:none; cursor:pointer;" title="Sil">🗑️</button>
+                                            <button class="btn-plus" onclick="event.stopPropagation(); miktarDegistir('${l.id}', 'artir')" title="Miktar Ekle"><i class="fa-solid fa-plus"></i></button>
+                                            <button class="btn-minus" onclick="event.stopPropagation(); miktarDegistir('${l.id}', 'azalt')" title="Miktar Düş"><i class="fa-solid fa-minus"></i></button>
+                                            <button onclick="event.stopPropagation(); duzenle('${l.id}')" style="background:none; border:none; cursor:pointer; margin-left:10px;" title="Düzenle">✏️</button>
+                                            <button onclick="event.stopPropagation(); sil('${l.id}')" style="background:none; border:none; cursor:pointer;" title="Sil">🗑️</button>
                                         </div>
                                     </div>
                                 </div>
@@ -219,7 +233,6 @@
         document.getElementById('genelToplam').innerText = genelToplamKG.toLocaleString('tr-TR', {minimumFractionDigits:2}) + " KG";
     }
 
-    // YENİ FONKSİYON: Miktar Artırma veya Azaltma
     function miktarDegistir(id, islem) {
         const miktar = prompt(islem === 'artir' ? "Eklenecek Miktarı Girin (KG):" : "Düşülecek Miktarı Girin (KG):");
         if (miktar === null || miktar === "" || isNaN(miktar)) return;
@@ -229,20 +242,11 @@
 
         iplikRef.child(id).once("value", (snap) => {
             const mevcut = snap.val().kg || 0;
-            let yeniMiktar;
+            let yeniMiktar = (islem === 'artir') ? mevcut + degisim : mevcut - degisim;
             
-            if (islem === 'artir') {
-                yeniMiktar = mevcut + degisim;
-            } else {
-                yeniMiktar = mevcut - degisim;
-                if (yeniMiktar < 0) {
-                    if (!confirm("Stok eksiye düşecek. Devam edilsin mi?")) return;
-                }
-            }
+            if (yeniMiktar < 0 && !confirm("Stok eksiye düşecek. Devam edilsin mi?")) return;
 
-            iplikRef.child(id).update({ kg: yeniMiktar }).then(() => {
-                console.log("Stok güncellendi.");
-            });
+            iplikRef.child(id).update({ kg: yeniMiktar });
         });
     }
 
@@ -258,6 +262,7 @@
         const select = document.getElementById('filtre_firma');
         const secili = select.value || "TÜMÜ";
         const firmalar = [...new Set(Object.values(data).map(v => v.firma))].sort();
+        
         select.innerHTML = '<option value="TÜMÜ">Tüm Firmalar</option>';
         firmalar.forEach(f => {
             select.innerHTML += `<option value="${f}" ${f === secili ? 'selected' : ''}>${f}</option>`;
