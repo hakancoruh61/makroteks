@@ -19,6 +19,10 @@
         .input-group label { font-size: 10px; font-weight: bold; color: #555; text-transform: uppercase; }
         .input-group input, .input-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
         
+        /* Yeni Stil: Bölüm Başlığı ve Buton */
+        .bolum-header { display: flex; justify-content: space-between; align-items: center; }
+        .btn-ekle-kucuk { background: var(--primary); color: white; border: none; border-radius: 3px; padding: 1px 5px; font-size: 9px; cursor: pointer; text-transform: none; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 11px; }
         th, td { border: 1px solid #999; padding: 8px 4px; text-align: center; }
         th { background: var(--dark); color: white; }
@@ -40,7 +44,6 @@
         @media print { 
             .no-print { display: none !important; } 
             .action-tray { display: none !important; }
-            /* Rapor çıktısında DURUM sütununu gizleme (11. sütun) */
             th:nth-child(11), td:nth-child(11) { display: none !important; }
             table { width: 100%; border: 1px solid #000; }
             th, td { border: 1px solid #000 !important; color: #000 !important; }
@@ -57,9 +60,17 @@
 
     <div class="form-grid no-print">
         <div class="input-group"><label>Ad Soyad</label><input type="text" id="p_ad"></div>
-        <div class="input-group"><label>Bölüm</label><input type="text" id="p_bolum"></div>
+        <div class="input-group">
+            <div class="bolum-header">
+                <label style="margin:0">Bölüm</label>
+                <button type="button" class="btn-ekle-kucuk" onclick="yeniBolumTanimla()">+ Yeni Bölüm</button>
+            </div>
+            <select id="p_bolum">
+                <option value="">Seçiniz...</option>
+            </select>
+        </div>
         <div class="input-group"><label>Maaş</label><input type="number" id="p_maas"></div>
-        <div class="input-group"><label>Gün</label><input type="number" id="p_gun" value="30"></div>
+        <div class="input-group"><label>Gün</label><input type="number" id="p_gun" value=""></div>
         <div class="input-group"><label>Mesai</label><input type="number" id="p_mesai" value="0"></div>
         <div class="input-group"><label>MK Farkı</label><input type="number" id="p_prim" value="0"></div>
         <div class="input-group"><label>Kesinti</label><input type="number" id="p_kesinti" value="0"></div>
@@ -100,7 +111,7 @@
         <input type="hidden" id="edit_id">
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
             <div class="input-group"><label>Ad Soyad</label><input type="text" id="e_ad"></div>
-            <div class="input-group"><label>Bölüm</label><input type="text" id="e_bolum"></div>
+            <div class="input-group"><label>Bölüm</label><select id="e_bolum"></select></div>
             <div class="input-group"><label>Maaş</label><input type="number" id="e_maas"></div>
             <div class="input-group"><label>Gün</label><input type="number" id="e_gun"></div>
             <div class="input-group"><label>Mesai</label><input type="number" id="e_mesai"></div>
@@ -126,19 +137,52 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const personelRef = db.ref("personel_yonetimi");
+    const bolumlerRef = db.ref("personel_bolumleri"); // Yeni bölümler için ref
 
     let tumVeriler = {};
 
+    // Bölümleri Firebase'den çek
+    bolumlerRef.on("value", (snap) => {
+        const bolumler = snap.val() || {};
+        const pSelect = document.getElementById('p_bolum');
+        const eSelect = document.getElementById('e_bolum');
+        const mevcutP = pSelect.value;
+        const mevcutE = eSelect.value;
+        
+        const optionsHtml = '<option value="">Seçiniz...</option>' + 
+            Object.values(bolumler).sort().map(b => `<option value="${b}">${b}</option>`).join('');
+        
+        pSelect.innerHTML = optionsHtml;
+        eSelect.innerHTML = optionsHtml;
+        
+        pSelect.value = mevcutP;
+        eSelect.value = mevcutE;
+    });
+
+    function yeniBolumTanimla() {
+        const yeniBolum = prompt("Yeni Bölüm Adını Yazın (Örn: DOKUMA):");
+        if (yeniBolum) {
+            const formatli = yeniBolum.toUpperCase().trim();
+            bolumlerRef.push(formatli);
+        }
+    }
+
     function yeniKaydet() {
         const ad = document.getElementById('p_ad').value;
+        const gunDegeri = document.getElementById('p_gun').value;
+        const bolum = document.getElementById('p_bolum').value;
+        
         if(!ad) return alert("İsim giriniz!");
+        if(!bolum) return alert("Lütfen bölüm seçiniz!");
+        if(gunDegeri === "") return alert("Lütfen çalışma gün sayısını giriniz!");
+
         const donem = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }).toUpperCase().trim();
         
         const veri = {
             ad: ad.toUpperCase().trim(),
-            bolum: document.getElementById('p_bolum').value.toUpperCase().trim(),
+            bolum: bolum,
             maas: parseFloat(document.getElementById('p_maas').value) || 0,
-            gun: parseFloat(document.getElementById('p_gun').value) || 0,
+            gun: parseFloat(gunDegeri) || 0,
             mesai: parseFloat(document.getElementById('p_mesai').value) || 0,
             prim: parseFloat(document.getElementById('p_prim').value) || 0,
             kesinti: parseFloat(document.getElementById('p_kesinti').value) || 0,
@@ -147,7 +191,9 @@
             tarih: Date.now() 
         };
         personelRef.push(veri).then(() => {
-            document.querySelectorAll('.form-grid input').forEach(i => i.id === 'p_gun' ? i.value='30' : (i.type==='number' ? i.value='0' : i.value=''));
+            document.getElementById('p_ad').value = "";
+            document.getElementById('p_bolum').value = "";
+            document.querySelectorAll('.form-grid input[type="number"]').forEach(i => i.value = (i.id === 'p_mesai' || i.id === 'p_prim' || i.id === 'p_kesinti' ? '0' : ''));
         });
     }
 
@@ -217,7 +263,6 @@
                 </tr>`;
         });
 
-        // TOPLAM FOOTER SATIRI
         document.getElementById('toplamFoot').innerHTML = `
             <tr class="toplam-satir">
                 <td colspan="3" style="text-align:right">GENEL TOPLAM:</td>
@@ -258,7 +303,7 @@
         const id = document.getElementById('edit_id').value;
         const veri = {
             ad: document.getElementById('e_ad').value.toUpperCase().trim(),
-            bolum: document.getElementById('e_bolum').value.toUpperCase().trim(),
+            bolum: document.getElementById('e_bolum').value,
             maas: parseFloat(document.getElementById('e_maas').value) || 0,
             gun: parseFloat(document.getElementById('e_gun').value) || 0,
             mesai: parseFloat(document.getElementById('e_mesai').value) || 0,

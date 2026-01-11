@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS İğne Takip v3.5 - Profesyonel Tasarım</title>
+    <title>MAKROTEKS İğne Takip v3.7</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,75 +13,38 @@
         body { font-family: 'Inter', 'Segoe UI', sans-serif; margin: 10px; background-color: #f8fafc; color: #1e293b; }
         .container { max-width: 1400px; margin: auto; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
         
-        /* ÖZET PANELİ */
         .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
-        .summary-card { padding: 15px; border-radius: 12px; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: transform 0.2s; }
-        .summary-card:hover { transform: translateY(-3px); }
+        .summary-card { padding: 15px; border-radius: 12px; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .suprem-card { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
         .kapak-card { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
         .silindir-card { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .genel-card { background: linear-gradient(135deg, #1e293b, #0f172a); }
-        .summary-card h3 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
         .summary-card div { font-size: 24px; font-weight: 800; margin-top: 4px; }
 
-        /* SIKILAŞTIRILMIŞ FORM TASARIMI */
         .form-section { background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
-        .form-section h4 { margin: 0 0 12px 0; font-size: 14px; color: var(--gray); display: flex; align-items: center; gap: 8px; }
-        
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; align-items: end; }
         .input-group { display: flex; flex-direction: column; gap: 4px; }
-        .input-group label { font-size: 11px; font-weight: 700; color: #475569; margin-left: 2px; }
+        .input-group label { font-size: 11px; font-weight: 700; color: #475569; display: flex; justify-content: space-between; align-items: center; }
         
-        select, input { 
-            padding: 8px 12px; 
-            border: 1.5px solid #cbd5e1; 
-            border-radius: 8px; 
-            font-size: 13px; 
-            transition: all 0.2s;
-            outline: none;
-            background: white;
-        }
-        select:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+        select, input { padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none; background: white; width: 100%; box-sizing: border-box; }
 
-        .btn-save { 
-            background: var(--success); 
-            color: white; 
-            border: none; 
-            padding: 9px 20px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: 700; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 8px;
-            transition: 0.2s;
-            height: 38px;
-        }
-        .btn-save:hover { background: #059669; transform: scale(1.02); }
+        .btn-save { background: var(--success); color: white; border: none; padding: 9px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; height: 38px; }
+        
+        /* Yeni İğne Butonu Tasarımı */
+        .btn-new-link { color: var(--blue); cursor: pointer; font-size: 10px; text-decoration: underline; font-weight: 800; }
+        .btn-new-link:hover { color: #1d4ed8; }
 
-        /* ARAMA VE TABLO */
-        .search-container { position: relative; margin-bottom: 15px; }
-        .search-container i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray); }
-        .search-input { width: 100%; padding: 10px 10px 10px 35px; border-radius: 10px; border: 1.5px solid #e2e8f0; font-size: 14px; box-sizing: border-box; }
-
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; font-size: 13px; }
-        th { background: #f8fafc; color: #64748b; font-weight: 600; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: center; }
+        .search-input { width: 100%; padding: 10px 15px; border-radius: 10px; border: 1.5px solid #e2e8f0; margin-bottom: 15px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; }
+        th { background: #f8fafc; padding: 12px; border-bottom: 2px solid #e2e8f0; }
         td { padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: center; }
-        tr:hover { background: #f1f5f9; }
-
         .stock-badge { background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 6px; font-weight: 800; }
-        .qty-ctrl { display: flex; align-items: center; justify-content: center; gap: 4px; }
-        .qty-btn { border: none; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
-
-        #connStatus { float: right; font-size: 11px; color: var(--success); font-weight: bold; }
-        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="connStatus">● SİSTEM ÇEVRİMİÇİ</div>
+    <div id="connStatus" style="float:right; font-size:11px; color:var(--success); font-weight:bold;">● SİSTEM ÇEVRİMİÇİ</div>
     <h2 style="font-size: 18px; margin-bottom: 20px;"><i class="fa-solid fa-microchip" style="color:var(--blue)"></i> MAKROTEKS İĞNE ENVANTERİ</h2>
 
     <div class="summary-grid">
@@ -92,7 +55,6 @@
     </div>
 
     <div class="form-section no-print">
-        <h4><i class="fa-solid fa-plus-circle"></i> Yeni İğne Girişi veya Stok Ekleme</h4>
         <div class="form-grid">
             <div class="input-group">
                 <label>Örme Tipi</label>
@@ -107,7 +69,7 @@
             </div>
             <div class="input-group">
                 <label>Fain (E)</label>
-                <input type="text" id="fain" placeholder="Örn: 28E">
+                <input type="text" id="fain" placeholder="28E">
             </div>
             <div class="input-group">
                 <label>Marka</label>
@@ -118,36 +80,31 @@
                 <input type="text" id="ayakNo" placeholder="1">
             </div>
             <div class="input-group">
-                <label>İğne No</label>
-                <input type="text" id="igneNo" placeholder="VO 141.52">
+                <label>İğne No <span class="btn-new-link" onclick="yeniIgneEkle()">+ Yeni Ekle</span></label>
+                <select id="igneNoSelect"></select>
             </div>
             <div class="input-group">
                 <label>Adet</label>
                 <input type="number" id="adet" value="0">
             </div>
-            <button class="btn-save" onclick="ekle()">
-                <i class="fa-solid fa-floppy-disk"></i> KAYDET
-            </button>
+            <button class="btn-save" onclick="ekle()"><i class="fa-solid fa-floppy-disk"></i> KAYDET</button>
         </div>
     </div>
 
-    <div class="search-container no-print">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="fainSearch" class="search-input" placeholder="Fain değerine göre hızlı filtreleme yapın..." onkeyup="tabloyuFiltrele()">
-    </div>
+    <input type="text" id="fainSearch" class="search-input no-print" placeholder="Fain değerine göre filtrele..." onkeyup="tabloyuFiltrele()">
 
     <table>
         <thead>
             <tr>
                 <th>Örme</th>
-                <th>İğne Bölümü</th>
+                <th>Bölüm</th>
                 <th>Fain</th>
                 <th>Marka</th>
                 <th>Ayak</th>
                 <th>İğne No</th>
                 <th>Stok</th>
-                <th class="no-print">+/- Hızlı İşlem</th>
-                <th class="no-print">İşlem</th>
+                <th class="no-print">+/- İşlem</th>
+                <th class="no-print">Sil</th>
             </tr>
         </thead>
         <tbody id="igneBody"></tbody>
@@ -175,6 +132,18 @@
             : `<option value="KAPAK İĞNESİ">KAPAK İĞNESİ</option><option value="SİLİNDİR İĞNESİ">SİLİNDİR İĞNESİ</option>`;
     }
 
+    function yeniIgneEkle() {
+        const yeniNo = prompt("Lütfen yeni İğne Numarasını (VO) giriniz:");
+        if (yeniNo) {
+            const sel = document.getElementById('igneNoSelect');
+            const opt = document.createElement('option');
+            opt.value = yeniNo.toUpperCase();
+            opt.text = yeniNo.toUpperCase();
+            opt.selected = true;
+            sel.add(opt);
+        }
+    }
+
     function ekle() {
         const veri = {
             orme: document.getElementById('ormeTipi').value,
@@ -182,17 +151,28 @@
             fain: document.getElementById('fain').value.toUpperCase().trim(),
             marka: document.getElementById('marka').value.toUpperCase(),
             ayak: document.getElementById('ayakNo').value,
-            no: document.getElementById('igneNo').value.toUpperCase(),
+            no: document.getElementById('igneNoSelect').value,
             adet: parseInt(document.getElementById('adet').value) || 0
         };
         if(!veri.no || !veri.fain) return alert("Eksik bilgi!");
         igneRef.push(veri);
-        // Temizlik
-        document.getElementById('fain').value = ""; document.getElementById('igneNo').value = ""; document.getElementById('adet').value = 0;
+        document.getElementById('adet').value = 0;
     }
 
     igneRef.on("value", (snap) => {
         tumVeriler = snap.val() || {};
+        const igneNoSelect = document.getElementById('igneNoSelect');
+        const mevcutSecili = igneNoSelect.value;
+        const noListesi = new Set();
+        Object.values(tumVeriler).forEach(i => { if(i.no) noListesi.add(i.no); });
+        
+        igneNoSelect.innerHTML = '<option value="">Seçiniz...</option>';
+        Array.from(noListesi).sort().forEach(no => {
+            const opt = document.createElement('option');
+            opt.value = no; opt.text = no;
+            if(no === mevcutSecili) opt.selected = true;
+            igneNoSelect.appendChild(opt);
+        });
         tabloyuFiltrele();
     });
 
@@ -211,27 +191,22 @@
             if (arama === "" || i.fain.includes(arama)) {
                 body.innerHTML += `
                     <tr>
-                        <td><span style="font-weight:600">${i.orme}</span></td>
+                        <td><b>${i.orme}</b></td>
                         <td><small>${i.bolum}</small></td>
-                        <td><b style="color:var(--blue)">${i.fain}</b></td>
+                        <td style="color:var(--blue); font-weight:bold">${i.fain}</td>
                         <td>${i.marka}</td>
                         <td>${i.ayak}</td>
                         <td>${i.no}</td>
                         <td><span class="stock-badge">${i.adet}</span></td>
                         <td class="no-print">
-                            <div class="qty-ctrl">
-                                <input type="number" id="qty_${key}" value="50" class="qty-input" style="width:45px; padding:4px">
-                                <button class="qty-btn" style="background:var(--success)" onclick="stokGuncelle('${key}', 'artir')"><i class="fa fa-plus"></i></button>
-                                <button class="qty-btn" style="background:var(--danger)" onclick="stokGuncelle('${key}', 'azalt')"><i class="fa fa-minus"></i></button>
-                            </div>
+                            <input type="number" id="qty_${key}" value="50" style="width:45px">
+                            <button onclick="stokGuncelle('${key}', 'artir')" style="background:var(--success); color:white; border:none; padding:2px 5px; border-radius:4px; cursor:pointer">+</button>
+                            <button onclick="stokGuncelle('${key}', 'azalt')" style="background:var(--danger); color:white; border:none; padding:2px 5px; border-radius:4px; cursor:pointer">-</button>
                         </td>
-                        <td class="no-print">
-                            <button onclick="sil('${key}')" style="border:none; background:none; cursor:pointer; color:var(--gray)"><i class="fa-solid fa-trash-can"></i></button>
-                        </td>
+                        <td class="no-print"><button onclick="sil('${key}')" style="border:none; background:none; cursor:pointer; color:var(--gray)"><i class="fa fa-trash"></i></button></td>
                     </tr>`;
             }
         });
-
         document.getElementById('toplamSuprem').innerText = sTop.toLocaleString();
         document.getElementById('toplamKapak').innerText = kTop.toLocaleString();
         document.getElementById('toplamSilindir').innerText = siTop.toLocaleString();
@@ -244,7 +219,7 @@
         igneRef.child(id).update({ adet: yeni });
     }
 
-    function sil(id) { if(confirm("Kaydı silmek istediğinize emin misiniz?")) igneRef.child(id).remove(); }
+    function sil(id) { if(confirm("Silmek istiyor musunuz?")) igneRef.child(id).remove(); }
     igneTipleriniGuncelle();
 </script>
 </body>

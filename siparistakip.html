@@ -17,7 +17,7 @@
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; background: #f1f5f9; padding: 20px; border-radius: 12px; }
         .input-group { display: flex; flex-direction: column; gap: 5px; }
         label { font-weight: 700; font-size: 11px; color: var(--slate); text-transform: uppercase; }
-        input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; }
+        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; }
         
         /* ÜST TOPLAM PANELİ */
         .summary-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
@@ -28,9 +28,10 @@
         .summary-card.kalan { background: #991b1b; } .summary-card.kalan b { color: #fca5a5; }
 
         /* FİLTRELER */
-        .filter-section { margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .filter-section { margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .filter-btn { padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; background: white; }
         .filter-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
+        .company-filter-box { display: flex; align-items: center; gap: 10px; background: #fff; padding: 5px 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-left: auto; }
 
         /* TABLO */
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; }
@@ -105,6 +106,13 @@
         <button class="filter-btn" id="btn-Beklemede" onclick="filtrele('Beklemede')">BEKLEMEDE</button>
         <button class="filter-btn" id="btn-Bitti" onclick="filtrele('Bitti')">BİTTİ</button>
         <button class="filter-btn" id="btn-Tümü" onclick="filtrele('Tümü')">TÜMÜ</button>
+        
+        <div class="company-filter-box">
+            <label style="margin:0; font-size:10px;">FİRMA SEÇİN:</label>
+            <select id="filter_firma" onchange="filtrele(aktifFiltre)" style="padding: 5px; font-size: 12px;">
+                <option value="Tümü">Tüm Firmalar</option>
+            </select>
+        </div>
     </div>
 
     <table>
@@ -156,7 +164,7 @@
         const id = document.getElementById('edit_id').value;
         const veri = {
             tarih: document.getElementById('s_tarih').value,
-            firma: document.getElementById('s_firma').value.toUpperCase(),
+            firma: document.getElementById('s_firma').value.toUpperCase().trim(),
             kumas: document.getElementById('s_kumas').value.toUpperCase(),
             gramaj: document.getElementById('s_gramaj').value,
             miktar: parseFloat(document.getElementById('s_miktar').value) || 0,
@@ -178,14 +186,43 @@
     ref.on("value", snap => {
         tumVeriler = snap.val() || {};
         const list = document.getElementById('siparisListesi');
+        const firmaFiltreSelect = document.getElementById('filter_firma');
+        const seciliFirma = firmaFiltreSelect.value;
+        
         list.innerHTML = "";
         
+        // Firma listesini güncelle (Select box için)
+        const firmalar = new Set();
+        Object.values(tumVeriler).forEach(v => { if(v.firma) firmalar.add(v.firma); });
+        
+        firmaFiltreSelect.innerHTML = '<option value="Tümü">Tüm Firmalar</option>';
+        Array.from(firmalar).sort().forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f;
+            opt.innerText = f;
+            if(f === seciliFirma) opt.selected = true;
+            firmaFiltreSelect.appendChild(opt);
+        });
+
         let tSiparis = 0, tSevk = 0, tKalan = 0;
-        const keys = Object.keys(tumVeriler).filter(k => k !== 'trigger').sort((a,b) => tumVeriler[b].timestamp - tumVeriler[a].timestamp);
+        
+        // SIRALAMA: Tarih sırasına göre sıralar (En yeni tarih üstte)
+        const keys = Object.keys(tumVeriler)
+            .filter(k => k !== 'trigger')
+            .sort((a,b) => {
+                const dateA = new Date(tumVeriler[a].tarih || 0);
+                const dateB = new Date(tumVeriler[b].tarih || 0);
+                return dateB - dateA; 
+            });
 
         keys.forEach(key => {
             const s = tumVeriler[key];
+            
+            // DURUM FİLTRESİ
             if(aktifFiltre !== "Tümü" && s.durum !== aktifFiltre) return;
+            
+            // FİRMA FİLTRESİ
+            if(seciliFirma !== "Tümü" && s.firma !== seciliFirma) return;
 
             const sevk = s.sevkedilen || 0;
             const kalan = s.miktar - sevk;

@@ -24,6 +24,11 @@
         .form-grid { display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 0.8fr auto; gap: 10px; align-items: end; }
         input { padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 8px; outline: none; width: 100%; box-sizing: border-box; background: white; }
         
+        /* Arama Çubuğu Stili */
+        .search-container { margin-bottom: 20px; position: relative; }
+        .search-container input { padding-left: 40px; border-color: var(--blue); border-width: 2px; }
+        .search-container i { position: absolute; left: 15px; top: 12px; color: var(--blue); }
+
         .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
         .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
         .file-btn { border: 1.5px dashed var(--blue); color: var(--blue); background: white; padding: 8px; border-radius: 8px; display: block; text-align: center; font-size: 12px; font-weight: bold; cursor: pointer; }
@@ -54,7 +59,7 @@
         .badge-toplam { background: var(--blue); color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
 
         @media print {
-            .no-print, .form-section, .action-cell, .btn-print { display: none !important; }
+            .no-print, .form-section, .action-cell, .btn-print, .search-container { display: none !important; }
             .kumas-detay { display: flex !important; }
             .container { box-shadow: none; width: 100%; max-width: 100%; border: none; }
             body { background: white; padding: 0; }
@@ -99,6 +104,11 @@
         </div>
     </div>
 
+    <div class="search-container no-print">
+        <i class="fa fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Kumaş ismi ile ara..." onkeyup="listeyiCiz()">
+    </div>
+
     <div id="stokListesi"></div>
 </div>
 
@@ -116,7 +126,7 @@
     let tumVeriler = {};
     let secilenResimBase64 = "";
     let duzenlenenId = null;
-    let eskiKumasIsmi = ""; // Toplu güncelleme takibi için
+    let eskiKumasIsmi = "";
 
     function dosyaSecildi(input) {
         const file = input.files[0];
@@ -144,26 +154,20 @@
         if(!yeniCinsi || !yeniRenk) return alert("Eksik bilgi!");
 
         if(duzenlenenId) {
-            // 1. KUMAŞ İSMİ DEĞİŞTİ Mİ? (Toplu güncelleme kontrolü)
             if(yeniCinsi !== eskiKumasIsmi) {
                 if(confirm(`Kumaş ismini "${eskiKumasIsmi}" -> "${yeniCinsi}" olarak değiştirmek, bu gruptaki TÜM renkleri etkileyecektir. Onaylıyor musunuz?`)) {
-                    // Aynı isme sahip tüm kayıtları bul
                     const guncellemeler = {};
                     Object.keys(tumVeriler).forEach(id => {
                         if(tumVeriler[id].cinsi === eskiKumasIsmi) {
                             guncellemeler[`${id}/cinsi`] = yeniCinsi;
-                            // Eğer yeni resim seçildiyse hepsine uygula
                             if(secilenResimBase64) guncellemeler[`${id}/resim`] = secilenResimBase64;
                         }
                     });
-                    // Mevcut düzenlenen satırın rengini ve adedini de güncelle
                     guncellemeler[`${duzenlenenId}/renk`] = yeniRenk;
                     guncellemeler[`${duzenlenenId}/adet`] = yeniAdet;
-
                     await stokRef.update(guncellemeler);
                 }
             } else {
-                // Sadece seçili tek satırı güncelle
                 const veri = { cinsi: yeniCinsi, renk: yeniRenk, adet: yeniAdet };
                 if(secilenResimBase64) {
                     veri.resim = secilenResimBase64;
@@ -174,7 +178,6 @@
             }
             formSifirla();
         } else {
-            // Yeni Kayıt
             stokRef.push({ cinsi: yeniCinsi, renk: yeniRenk, adet: yeniAdet, resim: secilenResimBase64 });
             formSifirla();
         }
@@ -184,11 +187,9 @@
         duzenlenenId = id;
         const v = tumVeriler[id];
         eskiKumasIsmi = v.cinsi;
-        
         document.getElementById('inpCinsi').value = v.cinsi;
         document.getElementById('inpRenk').value = v.renk;
         document.getElementById('inpAdet').value = v.adet;
-        
         document.getElementById('formAlani').classList.add('edit-mode');
         document.getElementById('editLabel').style.display = 'block';
         document.getElementById('btnIptal').style.display = 'block';
@@ -221,12 +222,16 @@
 
     function listeyiCiz() {
         const listeDiv = document.getElementById('stokListesi');
+        const aramaKelimesi = document.getElementById('searchInput').value.toUpperCase().trim();
         listeDiv.innerHTML = "";
         const gruplar = {};
         let tTur = 0, tRenk = 0, tKap = 0;
 
         Object.keys(tumVeriler).forEach(id => {
             const v = tumVeriler[id];
+            // Arama filtresi: Eğer arama kelimesi varsa ve kumaş cinsi bunu içermiyorsa atla
+            if (aramaKelimesi && !v.cinsi.includes(aramaKelimesi)) return;
+            
             if (!gruplar[v.cinsi]) gruplar[v.cinsi] = [];
             gruplar[v.cinsi].push({ id, ...v });
         });

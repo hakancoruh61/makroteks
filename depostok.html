@@ -38,6 +38,10 @@
         .btn-plus { background: var(--success); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
         .btn-minus { background: var(--warning); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
         
+        /* Yeni Stil */
+        .cinsi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .btn-ekle-kucuk { background: var(--primary); color: white; border: none; border-radius: 3px; padding: 2px 6px; font-size: 10px; cursor: pointer; }
+        
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .toplam-satir { background: #dfe6e9 !important; font-weight: bold; font-size: 16px; }
         #connStatus { float: right; font-size: 12px; color: green; font-weight: bold; }
@@ -59,8 +63,13 @@
                 <input type="text" id="inp_firma" placeholder="Tedarikçi Firma">
             </div>
             <div class="input-alan">
-                <label>İplik Cinsi</label>
-                <input type="text" id="inp_cinsi" placeholder="Örn: 75/36 BEYAZ PES">
+                <div class="cinsi-header">
+                    <label style="margin-bottom:0">İplik Cinsi</label>
+                    <button type="button" class="btn-ekle-kucuk" onclick="yeniCinsTanimla()">+ Yeni Tanımla</button>
+                </div>
+                <select id="inp_cinsi">
+                    <option value="">Seçiniz...</option>
+                </select>
             </div>
             <div class="input-alan">
                 <label>Lot No</label>
@@ -122,17 +131,36 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const iplikRef = db.ref("iplik_stoklari");
+    const cinslerRef = db.ref("iplik_cinsleri"); // Yeni cins tanımları için ref
 
-    // Tüm veriyi hafızada tutmak için global değişken
     let tumVeriler = {};
 
     document.getElementById('inp_tarih').valueAsDate = new Date();
+
+    // İplik Cinslerini Getir
+    cinslerRef.on("value", (snap) => {
+        const cinsler = snap.val() || {};
+        const select = document.getElementById('inp_cinsi');
+        const mevcutSecim = select.value;
+        select.innerHTML = '<option value="">Seçiniz...</option>';
+        Object.values(cinsler).sort().forEach(c => {
+            select.innerHTML += `<option value="${c}" ${c === mevcutSecim ? 'selected' : ''}>${c}</option>`;
+        });
+    });
+
+    function yeniCinsTanimla() {
+        const yeniCins = prompt("Yeni İplik Cinsini Yazın (Örn: 30/1 PENYE):");
+        if (yeniCins) {
+            const formatli = yeniCins.toUpperCase().trim();
+            cinslerRef.push(formatli);
+        }
+    }
 
     function kaydet() {
         const id = document.getElementById('edit_id').value;
         const veri = {
             firma: document.getElementById('inp_firma').value.toUpperCase().trim(),
-            cinsi: document.getElementById('inp_cinsi').value.toUpperCase().trim(),
+            cinsi: document.getElementById('inp_cinsi').value,
             lot: document.getElementById('inp_lot').value.toUpperCase().trim(),
             kg: parseFloat(document.getElementById('inp_kg').value) || 0,
             tarih: document.getElementById('inp_tarih').value,
@@ -148,7 +176,6 @@
         }
     }
 
-    // Firebase'den veri geldiğinde tetiklenir
     iplikRef.on("value", (snap) => {
         tumVeriler = snap.val() || {};
         filtreGuncelle(tumVeriler);
@@ -170,7 +197,6 @@
         
         const gruplanmis = {};
         liste.forEach(item => {
-            // Filtreleme kontrolü
             if(filtre && filtre !== "TÜMÜ" && item.firma !== filtre) return;
 
             const anahtar = `${item.firma}-${item.cinsi}`;
@@ -210,7 +236,7 @@
                 <tr id="${rowId}" class="lot-detail-row">
                     <td colspan="5">
                         <div class="lot-container">
-                            <strong style="display:block; margin-bottom:10px; color:var(--primary); border-bottom:1px solid #eee;">📦 LOT BAZLI İŞLEMLER:</strong>
+                            <strong style="display:block; margin-bottom:10px; color:var(--primary); border-bottom:1px solid #eee;">📦 LOT BAZLI İİŞLEMLER:</strong>
                             ${g.lotlar.map(l => `
                                 <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px dashed #ddd;">
                                     <span><span class="lot-badge">LOT: ${l.lot}</span> ${l.tarih.split('-').reverse().join('.')}</span>
@@ -294,6 +320,7 @@
     function formuTemizle() {
         document.getElementById('edit_id').value = "";
         document.querySelectorAll('.form-satir input').forEach(i => { if(i.type !== 'date') i.value = ""; });
+        document.getElementById('inp_cinsi').value = "";
         document.getElementById('formBaslik').innerText = "➕ Yeni İplik Girişi";
         document.getElementById('btn_ana').innerText = "BULUTA KAYDET";
         document.getElementById('btn_iptal').style.display = "none";
