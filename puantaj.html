@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS | Puantaj Sistemi v9.2</title>
+    <title>MAKROTEKS | Puantaj Sistemi v9.4</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     
@@ -52,16 +52,18 @@
         th, td { border: 1px solid var(--table-border); text-align: center; height: 22px; }
         th { background: #f1f5f9; font-size: 9px; }
 
-        .name-col { text-align: left; padding-left: 5px; width: 140px; overflow: hidden; white-space: nowrap; }
+        .no-col { width: 25px; font-weight: bold; background: #f1f5f9; }
+        /* Personel Adı Soyadı Kalınlaştırıldı */
+        .name-col { text-align: left; padding-left: 5px; width: 140px; overflow: hidden; white-space: nowrap; font-weight: 800; }
         .day-cell { width: 20px; cursor: pointer; font-weight: 900; font-size: 12px; }
         
         .present { color: var(--success-blue) !important; background-color: #f0f9ff; }
         .absent { background-color: var(--danger-bg) !important; color: #ffffff !important; }
 
-        .summary-col { font-weight: 700; background: #f8fafc; width: 30px; }
+        /* Toplam Gün Sütunu Kalınlaştırıldı */
+        .summary-col { font-weight: 900; background: #f8fafc; width: 30px; font-size: 11px; }
         .money-col { font-weight: 700; width: 70px; }
 
-        /* NOTLAR BÖLÜMÜ - 10 SATIR GÖRÜNÜMÜ */
         .notes-box { 
             margin-top: 15px; 
             border: 1px solid var(--table-border); 
@@ -81,9 +83,8 @@
             border: none; 
             background: transparent; 
             font-size: 13px; 
-            line-height: 1.5em; /* Satır yüksekliği */
+            line-height: 1.5em;
             padding: 10px;
-            /* Varsayılan olarak 10 satır yüksekliği (10 * 1.5em = 15em) */
             min-height: 15em; 
             resize: none; 
             box-sizing: border-box;
@@ -100,7 +101,7 @@
             .notes-box { border: 1px solid #000; break-inside: avoid; }
             #aylikNot { 
                 height: auto !important; 
-                min-height: 15em; /* Çıktıda da en az 10 satırlık yer kaplar */
+                min-height: 15em;
                 background-image: linear-gradient(#eee 1px, transparent 1px);
                 background-size: 100% 1.5em;
             }
@@ -134,7 +135,12 @@
 
     <div class="table-wrapper">
         <table>
-            <thead><tr id="gunlerRow"><th class="name-col">PERSONEL ADI SOYADI</th></tr></thead>
+            <thead>
+                <tr id="gunlerRow">
+                    <th class="no-col">NO</th>
+                    <th class="name-col">PERSONEL ADI SOYADI</th>
+                </tr>
+            </thead>
             <tbody id="pBody"></tbody>
         </table>
     </div>
@@ -166,7 +172,6 @@
 
     function boyutlandir(el) {
         el.style.height = 'auto';
-        // scrollHeight eğer 10 satırdan (15em) büyükse o boyuta uzar
         el.style.height = (el.scrollHeight) + 'px';
     }
 
@@ -209,10 +214,11 @@
         const bFiyat = ayarlar[ayKey]?.birimFiyat || 0;
         body.innerHTML = "";
 
+        let siraNo = 1;
         Object.keys(personeller).forEach(pId => {
             let p = personeller[pId];
             let tGun = 0;
-            let rowHtml = `<tr><td class="name-col">${p.ad}</td>`;
+            let rowHtml = `<tr><td class="no-col">${siraNo}</td><td class="name-col">${p.ad}</td>`;
             for(let i=1; i<=31; i++) {
                 let durum = (tumVeriler[ayKey]?.[pId]?.[i]) || "";
                 let cls = durum === 'V' ? 'present' : (durum === 'X' ? 'absent' : '');
@@ -221,11 +227,14 @@
             }
             let mVal = (tumVeriler[ayKey]?.[pId]?.makina) || 0;
             let tutar = (mVal * bFiyat).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+            
+            // GÜN sütunu summary-col class'ı sayesinde kalın yazdırılıyor
             rowHtml += `<td class="summary-col">${tGun}</td>`;
-            rowHtml += `<td class="summary-col"><input type="number" step="0.1" value="${mVal}" onchange="makinaKaydet('${pId}', this.value)" style="width:100%; border:none; text-align:center; font-size:10px; font-weight:bold; background:transparent;"></td>`;
+            rowHtml += `<td class="summary-col"><input type="number" step="0.1" value="${mVal}" onchange="makinaKaydet('${pId}', this.value)" style="width:100%; border:none; text-align:center; font-size:10px; font-weight:900; background:transparent;"></td>`;
             rowHtml += `<td class="money-col">₺${tutar}</td>`;
             rowHtml += `<td class="no-print"><button onclick="pSil('${pId}')" style="background:none; color:red; font-weight:bold;">×</button></td></tr>`;
             body.innerHTML += rowHtml;
+            siraNo++;
         });
     }
 

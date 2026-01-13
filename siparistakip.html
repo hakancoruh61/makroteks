@@ -31,7 +31,7 @@
         .filter-section { margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .filter-btn { padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; background: white; }
         .filter-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
-        .company-filter-box { display: flex; align-items: center; gap: 10px; background: #fff; padding: 5px 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-left: auto; }
+        .company-filter-box { display: flex; align-items: center; gap: 10px; background: #fff; padding: 5px 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
 
         /* TABLO */
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; }
@@ -107,6 +107,11 @@
         <button class="filter-btn" id="btn-Bitti" onclick="filtrele('Bitti')">BİTTİ</button>
         <button class="filter-btn" id="btn-Tümü" onclick="filtrele('Tümü')">TÜMÜ</button>
         
+        <div class="company-filter-box" style="margin-left: auto;">
+            <label style="margin:0; font-size:10px;">KUMAŞ ARA:</label>
+            <input type="text" id="filter_kumas" oninput="filtrele(aktifFiltre)" placeholder="Kumaş adı..." style="padding: 5px; font-size: 12px; border: 1px solid #e2e8f0; border-radius: 4px;">
+        </div>
+
         <div class="company-filter-box">
             <label style="margin:0; font-size:10px;">FİRMA SEÇİN:</label>
             <select id="filter_firma" onchange="filtrele(aktifFiltre)" style="padding: 5px; font-size: 12px;">
@@ -159,7 +164,6 @@
     function fmt(n) { return new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(n); }
     function fmtTarih(t) { if(!t) return "-"; const p = t.split("-"); return `${p[2]}.${p[1]}.${p[0]}`; }
 
-    // KAYIT VE GÜNCELLEME
     function kaydet() {
         const id = document.getElementById('edit_id').value;
         const veri = {
@@ -182,16 +186,15 @@
         }
     }
 
-    // VERİLERİ DİNLE VE LİSTELE
     ref.on("value", snap => {
         tumVeriler = snap.val() || {};
         const list = document.getElementById('siparisListesi');
         const firmaFiltreSelect = document.getElementById('filter_firma');
         const seciliFirma = firmaFiltreSelect.value;
+        const arananKumas = document.getElementById('filter_kumas').value.toUpperCase();
         
         list.innerHTML = "";
         
-        // Firma listesini güncelle (Select box için)
         const firmalar = new Set();
         Object.values(tumVeriler).forEach(v => { if(v.firma) firmalar.add(v.firma); });
         
@@ -206,7 +209,6 @@
 
         let tSiparis = 0, tSevk = 0, tKalan = 0;
         
-        // SIRALAMA: Tarih sırasına göre sıralar (En yeni tarih üstte)
         const keys = Object.keys(tumVeriler)
             .filter(k => k !== 'trigger')
             .sort((a,b) => {
@@ -218,11 +220,9 @@
         keys.forEach(key => {
             const s = tumVeriler[key];
             
-            // DURUM FİLTRESİ
             if(aktifFiltre !== "Tümü" && s.durum !== aktifFiltre) return;
-            
-            // FİRMA FİLTRESİ
             if(seciliFirma !== "Tümü" && s.firma !== seciliFirma) return;
+            if(arananKumas && !s.kumas.toUpperCase().includes(arananKumas)) return;
 
             const sevk = s.sevkedilen || 0;
             const kalan = s.miktar - sevk;
@@ -267,7 +267,6 @@
         document.getElementById('toplamKalanKG').innerText = fmt(tKalan) + " KG";
     });
 
-    // İŞLEMLER
     function menuAc(id) {
         const m = document.getElementById(`menu-${id}`);
         const v = m.style.display === 'block';

@@ -38,6 +38,10 @@
         th { background: #f8fafc; padding: 12px; border-bottom: 2px solid #e2e8f0; }
         td { padding: 10px; border-bottom: 1px solid #f1f5f9; text-align: center; }
         .stock-badge { background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 6px; font-weight: 800; }
+        
+        /* İşlem sütunu için özel stil */
+        .action-cell { display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .action-cell input { width: 70px !important; text-align: center; }
     </style>
 </head>
 <body>
@@ -243,9 +247,11 @@
                         <td>${i.no}</td>
                         <td><span class="stock-badge">${i.adet}</span></td>
                         <td class="no-print">
-                            <input type="number" id="qty_${key}" value="50" style="width:45px">
-                            <button onclick="stokGuncelle('${key}', 'artir')" style="background:var(--success); color:white; border:none; padding:2px 5px; border-radius:4px; cursor:pointer">+</button>
-                            <button onclick="stokGuncelle('${key}', 'azalt')" style="background:var(--danger); color:white; border:none; padding:2px 5px; border-radius:4px; cursor:pointer">-</button>
+                            <div class="action-cell">
+                                <input type="number" id="qty_${key}" value="50">
+                                <button onclick="stokGuncelle('${key}', 'artir')" style="background:var(--success); color:white; border:none; padding:2px 8px; border-radius:4px; cursor:pointer; font-weight:bold">+</button>
+                                <button onclick="stokGuncelle('${key}', 'azalt')" style="background:var(--danger); color:white; border:none; padding:2px 8px; border-radius:4px; cursor:pointer; font-weight:bold">-</button>
+                            </div>
                         </td>
                         <td class="no-print"><button onclick="sil('${key}')" style="border:none; background:none; cursor:pointer; color:var(--gray)"><i class="fa fa-trash"></i></button></td>
                     </tr>`;
