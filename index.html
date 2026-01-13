@@ -31,6 +31,13 @@
             background: #0f172a; color: white; box-sizing: border-box; outline: none; transition: 0.3s;
         }
         .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        
+        /* Beni Hatırla Tasarımı */
+        .remember-me {
+            display: flex; align-items: center; margin-bottom: 20px; color: #cbd5e1; font-size: 0.85rem; cursor: pointer;
+        }
+        .remember-me input { margin-right: 10px; cursor: pointer; }
+
         .login-btn {
             width: 100%; padding: 14px; background: var(--accent); color: white;
             border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;
@@ -52,25 +59,56 @@
                 <label><i class="fas fa-lock"></i> Şifre</label>
                 <input type="password" id="password" placeholder="••••" required>
             </div>
+            
+            <label class="remember-me">
+                <input type="checkbox" id="rememberMe"> Beni Hatırla
+            </label>
+
             <button type="submit" class="login-btn">SİSTEME GİRİŞ</button>
             <div id="error-msg">Bilgiler hatalı, lütfen kontrol edin.</div>
         </form>
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            const err = document.getElementById('error-msg');
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const rememberMeCheckbox = document.getElementById('rememberMe');
+        const errorMsg = document.getElementById('error-msg');
 
-            // Sizin istediğiniz bilgiler
+        // Sayfa yüklendiğinde kayıtlı bilgileri kontrol et
+        window.onload = function() {
+            const savedUser = localStorage.getItem('rememberedUser');
+            const savedPass = localStorage.getItem('rememberedPass');
+            
+            if (savedUser && savedPass) {
+                usernameInput.value = savedUser;
+                passwordInput.value = savedPass;
+                rememberMeCheckbox.checked = true;
+            }
+        };
+
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const u = usernameInput.value;
+            const p = passwordInput.value;
+
+            // Giriş doğrulaması
             if (u === "makroerp" && p === "1923") {
-                sessionStorage.setItem('isLoggedIn', 'true'); // Basit oturum kontrolü
-                window.location.href = "dashboard.html"; // Panel dosyasına yönlendir
+                // Beni hatırla işaretli mi?
+                if (rememberMeCheckbox.checked) {
+                    localStorage.setItem('rememberedUser', u);
+                    localStorage.setItem('rememberedPass', p);
+                } else {
+                    localStorage.removeItem('rememberedUser');
+                    localStorage.removeItem('rememberedPass');
+                }
+
+                sessionStorage.setItem('isLoggedIn', 'true');
+                window.location.href = "dashboard.html";
             } else {
-                err.style.display = "block";
-                setTimeout(() => { err.style.display = "none"; }, 3000);
+                errorMsg.style.display = "block";
+                setTimeout(() => { errorMsg.style.display = "none"; }, 3000);
             }
         });
     </script>

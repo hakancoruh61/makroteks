@@ -30,9 +30,8 @@
 
         .btn-save { background: var(--success); color: white; border: none; padding: 9px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; height: 38px; }
         
-        /* Yeni İğne Butonu Tasarımı */
-        .btn-new-link { color: var(--blue); cursor: pointer; font-size: 10px; text-decoration: underline; font-weight: 800; }
-        .btn-new-link:hover { color: #1d4ed8; }
+        .btn-new-link { color: var(--blue); cursor: pointer; font-size: 10px; text-decoration: underline; font-weight: 800; margin-left: 5px; }
+        .btn-new-link:hover { opacity: 0.7; }
 
         .search-input { width: 100%; padding: 10px 15px; border-radius: 10px; border: 1.5px solid #e2e8f0; margin-bottom: 15px; box-sizing: border-box; }
         table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; }
@@ -80,7 +79,14 @@
                 <input type="text" id="ayakNo" placeholder="1">
             </div>
             <div class="input-group">
-                <label>İğne No <span class="btn-new-link" onclick="yeniIgneEkle()">+ Yeni Ekle</span></label>
+                <label>
+                    İğne No 
+                    <span style="white-space: nowrap;">
+                        <span class="btn-new-link" onclick="yeniIgneEkle()">+ Yeni</span>
+                        <span class="btn-new-link" style="color:var(--orange)" onclick="igneNoDuzenle()">Dzn.</span>
+                        <span class="btn-new-link" style="color:var(--danger)" onclick="igneNoSil()">Sil</span>
+                    </span>
+                </label>
                 <select id="igneNoSelect"></select>
             </div>
             <div class="input-group">
@@ -137,10 +143,48 @@
         if (yeniNo) {
             const sel = document.getElementById('igneNoSelect');
             const opt = document.createElement('option');
-            opt.value = yeniNo.toUpperCase();
-            opt.text = yeniNo.toUpperCase();
+            const val = yeniNo.toUpperCase().trim();
+            opt.value = val;
+            opt.text = val;
             opt.selected = true;
             sel.add(opt);
+        }
+    }
+
+    function igneNoDuzenle() {
+        const sel = document.getElementById('igneNoSelect');
+        const eskiNo = sel.value;
+        if (!eskiNo || eskiNo === "") return alert("Lütfen listeden geçerli bir iğne seçin!");
+
+        const yeniNo = prompt("Seçili iğne numarasını TÜM kayıtlarda değiştir:", eskiNo);
+        if (yeniNo && yeniNo.trim().toUpperCase() !== eskiNo) {
+            const guncelNo = yeniNo.trim().toUpperCase();
+            let guncellenenSayisi = 0;
+
+            Object.keys(tumVeriler).forEach(key => {
+                if (tumVeriler[key].no === eskiNo) {
+                    igneRef.child(key).update({ no: guncelNo });
+                    guncellenenSayisi++;
+                }
+            });
+            alert(`${guncellenenSayisi} adet kayıt güncellendi.`);
+        }
+    }
+
+    function igneNoSil() {
+        const sel = document.getElementById('igneNoSelect');
+        const no = sel.value;
+        if (!no || no === "") return alert("Lütfen listeden silinecek bir iğne seçin!");
+
+        if (confirm(`${no} numaralı iğneye ait TABLODAKİ TÜM STOK KAYITLARI SİLİNECEKTİR!\n\nEmin misiniz?`)) {
+            let silinenSayisi = 0;
+            Object.keys(tumVeriler).forEach(key => {
+                if (tumVeriler[key].no === no) {
+                    igneRef.child(key).remove();
+                    silinenSayisi++;
+                }
+            });
+            alert(`${silinenSayisi} adet kayıt başarıyla silindi.`);
         }
     }
 
@@ -154,7 +198,7 @@
             no: document.getElementById('igneNoSelect').value,
             adet: parseInt(document.getElementById('adet').value) || 0
         };
-        if(!veri.no || !veri.fain) return alert("Eksik bilgi!");
+        if(!veri.no || !veri.fain) return alert("Eksik bilgi! Lütfen Fain ve İğne No alanlarını doldurun.");
         igneRef.push(veri);
         document.getElementById('adet').value = 0;
     }
@@ -219,7 +263,7 @@
         igneRef.child(id).update({ adet: yeni });
     }
 
-    function sil(id) { if(confirm("Silmek istiyor musunuz?")) igneRef.child(id).remove(); }
+    function sil(id) { if(confirm("Bu satırı silmek istiyor musunuz?")) igneRef.child(id).remove(); }
     igneTipleriniGuncelle();
 </script>
 </body>
