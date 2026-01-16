@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boyahane Takip - Filtreleme Özellikli</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4zJ0nY_06VnOh-JEmpfhw8EzrvbCiIBA",
+            authDomain: "texerp-ea015.firebaseapp.com",
+            databaseURL: "https://texerp-ea015-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "texerp-ea015",
+            storageBucket: "texerp-ea015.firebasestorage.app",
+            messagingSenderId: "531851332664",
+            appId: "1:531851332664:web:d2af3d69b6241d7fd8eacd",
+            measurementId: "G-7ZRW3S7LP0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let duzenlenenId = null;
+        let gecerliFiltre = 'İŞLEMDE'; // Uygulama açıldığında varsayılan filtre
+
+        // RESMİ KENDİ BOYUTUNDA PENCEREDE AÇMA
+        window.resmiYeniPenceredeAc = function(base64Data) {
+            const img = new Image();
+            img.src = base64Data;
+            img.onload = function() {
+                const genislik = Math.min(this.width, screen.width - 100);
+                const yukseklik = Math.min(this.height, screen.height - 100);
+                const sol = (screen.width / 2) - (genislik / 2);
+                const ust = (screen.height / 2) - (yukseklik / 2);
+                const yeniPencere = window.open("", "_blank", `width=${genislik},height=${yukseklik},left=${sol},top=${ust},resizable=yes`);
+                yeniPencere.document.write(`<body style="margin:0; background:#000; display:flex; justify-content:center; align-items:center;"><img src="${base64Data}" style="max-width:100%; max-height:100%;"></body>`);
+            };
+        };
+
+        // KAYDET VEYA GÜNCELLE
+        window.islemYap = async function() {
+            const ad = document.getElementById('numuneAdi').value;
+            if(!ad) { alert("Lütfen numune adını girin!"); return; }
+
+            const hamDosya = document.getElementById('hamResim').files[0];
+            const boyaliDosya = document.getElementById('boyaliResim').files[0];
+
+            let veri = {
+                ad: ad,
+                tarih: document.getElementById('sevkTarihi').value,
+                irsaliye: document.getElementById('irsaliyeNo').value,
+                adet: document.getElementById('adet').value,
+                kg: document.getElementById('kg').value,
+                durum: document.getElementById('durum').value
+            };
+
+            if (hamDosya) { veri.hamResim = await toBase64(hamDosya); }
+            if (boyaliDosya) { veri.boyaliResim = await toBase64(boyaliDosya); }
+
+            if (duzenlenenId) {
+                update(ref(db, 'numuneler/' + duzenlenenId), veri).then(() => { iptalEt(); });
+            } else {
+                push(ref(db, 'numuneler'), veri).then(() => { formuSifirla(); });
+            }
+        };
+
+        window.duzenle = function(id, veri) {
+            duzenlenenId = id;
+            document.getElementById('numuneAdi').value = veri.ad || '';
+            document.getElementById('sevkTarihi').value = veri.tarih || '';
+            document.getElementById('irsaliyeNo').value = veri.irsaliye || '';
+            document.getElementById('adet').value = veri.adet || '';
+            document.getElementById('kg').value = veri.kg || '';
+            document.getElementById('durum').value = veri.durum || 'İŞLEMDE';
+            document.getElementById('anaButon').innerText = "GÜNCELLE";
+            document.getElementById('iptalBtn').style.display = "inline-block";
+            window.scrollTo(0, 0);
+        };
+
+        window.iptalEt = function() {
+            duzenlenenId = null;
+            document.getElementById('anaButon').innerText = "KAYDET";
+            document.getElementById('iptalBtn').style.display = "none";
+            formuSifirla();
+        };
+
+        window.filtrele = function(durum) {
+            gecerliFiltre = durum;
+            // Butonların aktiflik durumunu güncelle
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            tabloyuYenile();
+        };
+
+        window.durumDegistir = function(id, mevcutDurum) {
+            const yeniDurum = mevcutDurum === 'TAMAMLANDI' ? 'İŞLEMDE' : 'TAMAMLANDI';
+            update(ref(db, 'numuneler/' + id), { durum: yeniDurum });
+        };
+
+        window.sil = function(id) {
+            if(confirm('Kaydı silmek istiyor musunuz?')) {
+                remove(ref(db, 'numuneler/' + id));
+            }
+        };
+
+        let sonVeri = {}; // Filtreleme için veriyi yerelde tut
+        onValue(ref(db, 'numuneler'), (snapshot) => {
+            sonVeri = snapshot.val() || {};
+            tabloyuYenile();
+        });
+
+        function tabloyuYenile() {
+            const gövde = document.getElementById('tabloGövde');
+            gövde.innerHTML = '';
+            
+            Object.keys(sonVeri).forEach(key => {
+                const item = sonVeri[key];
+                
+                // Filtreleme kontrolü
+                if (gecerliFiltre !== 'HEPSİ' && item.durum !== gecerliFiltre) return;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.ad}</td>
+                    <td>${item.tarih}</td>
+                    <td>${item.irsaliye}</td>
+                    <td>${item.adet}</td>
+                    <td>${item.kg}</td>
+                    <td>${item.hamResim ? `<img src="${item.hamResim}" class="img-preview" onclick="resmiYeniPenceredeAc('${item.hamResim}')">` : '-'}</td>
+                    <td>${item.boyaliResim ? `<img src="${item.boyaliResim}" class="img-preview" onclick="resmiYeniPenceredeAc('${item.boyaliResim}')">` : '-'}</td>
+                    <td><button class="status-pill ${item.durum === 'TAMAMLANDI' ? 'tamam' : 'islemde'}" onclick="durumDegistir('${key}', '${item.durum}')">${item.durum}</button></td>
+                    <td>
+                        <button class="btn-edit" onclick='duzenle("${key}", ${JSON.stringify(item)})'>Düzenle</button>
+                        <button class="btn-delete" onclick="sil('${key}')">Sil</button>
+                    </td>
+                `;
+                gövde.appendChild(row);
+            });
+        }
+
+        function formuSifirla() {
+            document.getElementById('formAlan').reset();
+            tarihiGuncelle();
+        }
+
+        function tarihiGuncelle() {
+            document.getElementById('sevkTarihi').value = new Date().toISOString().split('T')[0];
+        }
+        window.onload = tarihiGuncelle;
+
+        const toBase64 = file => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+        });
+    </script>
+
+    <style>
+        :root { --primary: #2c3e50; --secondary: #34495e; --success: #27ae60; --warning: #f39c12; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 20px; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: var(--primary); text-align: center; margin-bottom: 20px; }
+        
+        /* Filtre Bölümü */
+        .filter-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .filter-btn { padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; background: white; cursor: pointer; font-weight: bold; color: #666; transition: 0.3s; }
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .filter-btn:hover { background: #eee; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: end; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 11px; font-weight: bold; margin-bottom: 5px; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        
+        .ekle-btn { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .iptal-btn { background: #95a5a6; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; display: none; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: center; }
+        th { background: var(--secondary); color: white; font-size: 13px; }
+        .img-preview { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #ddd; }
+        
+        .status-pill { padding: 6px; border-radius: 20px; color: white; cursor: pointer; border: none; font-weight: bold; width: 100px; }
+        .tamam { background: var(--success); }
+        .islemde { background: var(--warning); }
+        
+        .btn-edit { color: var(--primary); border: 1px solid var(--primary); background: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .btn-delete { color: var(--danger); border: 1px solid var(--danger); background: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>BOYAHANE NUMUNE TAKİP SİSTEMİ</h2>
+    
+    <form id="formAlan" onsubmit="event.preventDefault();">
+        <div class="form-grid">
+            <div class="form-group"><label>Numune Adı</label><input type="text" id="numuneAdi"></div>
+            <div class="form-group"><label>Sevk Tarihi</label><input type="date" id="sevkTarihi"></div>
+            <div class="form-group"><label>İrsaliye No</label><input type="text" id="irsaliyeNo"></div>
+            <div class="form-group"><label>Adet</label><input type="number" id="adet"></div>
+            <div class="form-group"><label>KG</label><input type="number" id="kg"></div>
+            <div class="form-group">
+                <label>Durum</label>
+                <select id="durum">
+                    <option value="İŞLEMDE">İŞLEMDE</option>
+                    <option value="TAMAMLANDI">TAMAMLANDI</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Ham Kumaş</label><input type="file" id="hamResim"></div>
+            <div class="form-group"><label>Boyalı Kumaş</label><input type="file" id="boyaliResim"></div>
+            <button type="button" class="ekle-btn" id="anaButon" onclick="islemYap()">KAYDET</button>
+            <button type="button" class="iptal-btn" id="iptalBtn" onclick="iptalEt()">İPTAL</button>
+        </div>
+    </form>
+
+    <div class="filter-container">
+        <button class="filter-btn active" onclick="filtrele('İŞLEMDE')">BEKLEYEN İŞLER (İŞLEMDE)</button>
+        <button class="filter-btn" onclick="filtrele('TAMAMLANDI')">BİTEN İŞLER (TAMAMLANDI)</button>
+        <button class="filter-btn" onclick="filtrele('HEPSİ')">TÜMÜNÜ GÖSTER</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Numune Adı</th>
+                <th>Sevk Tarihi</th>
+                <th>İrsaliye No</th>
+                <th>Adet</th>
+                <th>KG</th>
+                <th>Ham Kumaş</th>
+                <th>Boyalı Kumaş</th>
+                <th>Durum</th>
+                <th>İşlem</th>
+            </tr>
+        </thead>
+        <tbody id="tabloGövde"></tbody>
+    </table>
+</div>
+
+</body>
+</html>
