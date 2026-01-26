@@ -118,6 +118,9 @@
         <nav class="nav-menu">
             <div id="btn-home" class="nav-item active" onclick="goHome()"><i class="fas fa-th-large"></i> Ana Sayfa</div>
             <div class="nav-item" onclick="loadPage('siparistakip.html', 'Sipariş Takip')"><i class="fas fa-shopping-cart"></i> Sipariş Takip</div>
+            
+            <div class="nav-item" onclick="loadPage('boyahane.html', 'Boyahane Takip')"><i class="fas fa-industry"></i> Boyahane Takip</div>
+            
             <div class="nav-item" onclick="loadPage('depostok.html', 'İplik Stok')"><i class="fas fa-layer-group"></i> İplik Stok</div>
             <div class="nav-item" onclick="loadPage('kumasstok.html', 'Kumaş Stok')"><i class="fas fa-boxes"></i> Kumaş Stok</div>
             
@@ -212,9 +215,11 @@
                 if (pass !== "1308") return;
             }
             document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-            if(event && event.currentTarget) {
-                event.currentTarget.classList.add('active');
+            // Event kontrolü ile aktif sınıfını ekleme
+            if(window.event && window.event.currentTarget && window.event.currentTarget.classList) {
+                window.event.currentTarget.classList.add('active');
             }
+            
             document.getElementById('welcome').style.display = 'none';
             const f = document.getElementById('mainFrame');
             f.style.display = 'block'; 

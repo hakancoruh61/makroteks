@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Günlük Üretim Takip Sistemi</title>
+    <style>
+        :root { --primary: #2c3e50; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: #333; font-size: 13px; }
+        .main-container { max-width: 900px; margin: auto; }
+        .section { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 4px solid var(--primary); position: relative; }
+        
+        /* Başlık ve Tarih Düzeni */
+        .rapor-ust-bilgi { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #eee; margin-bottom: 15px; padding-bottom: 5px; }
+        .rapor-baslik { font-size: 18px; font-weight: bold; color: var(--primary); margin: 0; }
+        .rapor-tarih { font-size: 14px; font-weight: bold; color: #555; }
+
+        h2 { margin-top: 0; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        
+        input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        
+        .btn-kaydet { background: #27ae60; color: white; }
+        .btn-guncelle { background: #2980b9; color: white; display: none; }
+        .btn-excel { background: #f39c12; color: white; }
+        .btn-yazdir { background: #34495e; color: white; }
+        .btn-sil { background: #e74c3c; color: white; padding: 2px 6px; font-size: 10px; }
+        .btn-duzenle { background: #3498db; color: white; padding: 2px 6px; font-size: 10px; margin-right: 2px; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: var(--primary); font-size: 12px; }
+        
+        .firma-baslik { background: #eceff1; font-weight: bold; font-size: 13px; padding: 4px 8px; border-left: 3px solid var(--primary); }
+        .firma-toplam { background: #fdfefe; text-align: right; font-weight: bold; color: #27ae60; font-size: 12px; }
+        .genel-toplam-bar { background: var(--primary); color: white; padding: 10px; border-radius: 4px; text-align: right; font-weight: bold; font-size: 14px; }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; }
+            .section { box-shadow: none; border: none; margin: 0; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div id="print-uretim" class="section">
+        <div class="rapor-ust-bilgi">
+            <div class="rapor-baslik">GÜNLÜK ÜRETİM RAPORU</div>
+            <div class="rapor-tarih" id="bugununTarihi"></div>
+        </div>
+
+        <h2 class="no-print">⚙️ Veri Girişi
+            <div>
+                <button class="btn-excel" onclick="exportTableToExcel('tabloAlani', 'Gunluk_Uretim_Raporu')">Excel</button>
+                <button class="btn-yazdir" onclick="window.print()">🖨️ Yazdır</button>
+            </div>
+        </h2>
+        
+        <div class="form-row no-print">
+            <input type="hidden" id="edit_id">
+            <input type="text" id="u_firma" placeholder="Firma">
+            <input type="text" id="u_makNo" placeholder="Mak No">
+            <input type="text" id="u_kumas" placeholder="Kumaş">
+            <input type="number" id="u_adet" placeholder="Adet">
+            <input type="number" step="0.01" id="u_kg" placeholder="Birim KG">
+            <button id="btn_kaydet" class="btn-kaydet" onclick="kaydet()">Ekle</button>
+            <button id="btn_guncelle" class="btn-guncelle" onclick="guncellemeKaydet()">Güncelle</button>
+            <button id="btn_vazgec" class="btn-sil" style="display:none;" onclick="formSifirla()">Vazgeç</button>
+        </div>
+
+        <div id="tabloAlani"></div>
+        <div class="genel-toplam-bar" id="genelToplam">GENEL TOPLAM: 0 KG</div>
+    </div>
+</div>
+
+<script>
+    let uretimDatalar = JSON.parse(localStorage.getItem('uretim_db')) || [];
+
+    // Tarihi Ayarla
+    function tarihGuncelle() {
+        const simdi = new Date();
+        const gun = String(simdi.getDate()).padStart(2, '0');
+        const ay = String(simdi.getMonth() + 1).padStart(2, '0');
+        const yil = simdi.getFullYear();
+        document.getElementById('bugununTarihi').innerText = `${gun}.${ay}.${yil}`;
+    }
+
+    function kaydet() {
+        const fields = ['u_firma', 'u_makNo', 'u_adet', 'u_kg'];
+        if (fields.some(id => !document.getElementById(id).value)) return alert("Eksik alan!");
+
+        uretimDatalar.push({
+            id: Date.now(),
+            firma: document.getElementById('u_firma').value.trim(),
+            mak: document.getElementById('u_makNo').value,
+            kumas: document.getElementById('u_kumas').value,
+            adet: document.getElementById('u_adet').value,
+            birim_kg: document.getElementById('u_kg').value,
+            kg: (document.getElementById('u_adet').value * document.getElementById('u_kg').value).toFixed(2)
+        });
+        
+        veriyiKaydetVeCiz();
+        formSifirla();
+    }
+
+    function duzenle(id) {
+        const veri = uretimDatalar.find(x => x.id === id);
+        if (!veri) return;
+
+        document.getElementById('edit_id').value = veri.id;
+        document.getElementById('u_firma').value = veri.firma;
+        document.getElementById('u_makNo').value = veri.mak;
+        document.getElementById('u_kumas').value = veri.kumas;
+        document.getElementById('u_adet').value = veri.adet;
+        document.getElementById('u_kg').value = veri.birim_kg || (veri.kg / veri.adet).toFixed(2);
+
+        document.getElementById('btn_kaydet').style.display = 'none';
+        document.getElementById('btn_guncelle').style.display = 'inline-block';
+        document.getElementById('btn_vazgec').style.display = 'inline-block';
+        
+        window.scrollTo(0,0);
+    }
+
+    function guncellemeKaydet() {
+        const id = parseInt(document.getElementById('edit_id').value);
+        const index = uretimDatalar.findIndex(x => x.id === id);
+
+        if (index !== -1) {
+            uretimDatalar[index] = {
+                id: id,
+                firma: document.getElementById('u_firma').value.trim(),
+                mak: document.getElementById('u_makNo').value,
+                kumas: document.getElementById('u_kumas').value,
+                adet: document.getElementById('u_adet').value,
+                birim_kg: document.getElementById('u_kg').value,
+                kg: (document.getElementById('u_adet').value * document.getElementById('u_kg').value).toFixed(2)
+            };
+            veriyiKaydetVeCiz();
+            formSifirla();
+        }
+    }
+
+    function formSifirla() {
+        document.getElementById('edit_id').value = '';
+        document.querySelectorAll('.form-row input').forEach(i => i.value = '');
+        document.getElementById('btn_kaydet').style.display = 'inline-block';
+        document.getElementById('btn_guncelle').style.display = 'none';
+        document.getElementById('btn_vazgec').style.display = 'none';
+    }
+
+    function veriyiKaydetVeCiz() {
+        localStorage.setItem('uretim_db', JSON.stringify(uretimDatalar));
+        tabloCiz();
+    }
+
+    function tabloCiz() {
+        const tabloAlani = document.getElementById('tabloAlani');
+        tabloAlani.innerHTML = '';
+        
+        const gruplanmis = uretimDatalar.reduce((acc, obj) => {
+            (acc[obj.firma] = acc[obj.firma] || []).push(obj);
+            return acc;
+        }, {});
+
+        let genelToplamKg = 0;
+
+        for (let firma in gruplanmis) {
+            let firmaToplami = 0;
+            let html = `<table>
+                <thead>
+                    <tr><th colspan="5" class="firma-baslik">🏢 ${firma}</th></tr>
+                    <tr><th>Mak No</th><th>Kumaş</th><th>Adet</th><th>Toplam KG</th><th class="no-print">İşlem</th></tr>
+                </thead><tbody>`;
+
+            gruplanmis[firma].forEach(d => {
+                firmaToplami += parseFloat(d.kg);
+                html += `<tr>
+                    <td>${d.mak}</td><td>${d.kumas}</td><td>${d.adet}</td><td>${d.kg}</td>
+                    <td class="no-print">
+                        <button class="btn-duzenle" onclick="duzenle(${d.id})">Düzenle</button>
+                        <button class="btn-sil" onclick="sil(${d.id})">Sil</button>
+                    </td>
+                </tr>`;
+            });
+
+            genelToplamKg += firmaToplami;
+            html += `<tr><td colspan="3" class="firma-toplam">Alt Toplam:</td><td colspan="2" class="firma-toplam">${firmaToplami.toFixed(2)} KG</td></tr>
+                </tbody></table>`;
+            tabloAlani.innerHTML += html;
+        }
+        document.getElementById('genelToplam').innerText = `GENEL TOPLAM: ${genelToplamKg.toFixed(2)} KG`;
+    }
+
+    function sil(id) {
+        if(confirm("Bu kaydı silmek istediğinize emin misiniz?")) {
+            uretimDatalar = uretimDatalar.filter(x => x.id !== id);
+            veriyiKaydetVeCiz();
+        }
+    }
+
+    function exportTableToExcel(divID, filename = ''){
+        let downloadLink = document.createElement("a");
+        let tableHTML = document.getElementById(divID).innerHTML;
+        downloadLink.href = 'data:application/vnd.ms-excel,' + encodeURIComponent(tableHTML);
+        downloadLink.download = filename + '.xls';
+        downloadLink.click();
+    }
+
+    // Başlangıç fonksiyonları
+    tarihGuncelle();
+    tabloCiz();
+</script>
+</body>
+</html>
