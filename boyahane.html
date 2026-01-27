@@ -3,101 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boyahane Takip Pro v18 - İşlem Durumu</title>
+    <title>Boyahane Takip v43 - Detaylı Etiketli Görünüm</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
-        .card { border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: none; }
-        .header-custom { background: #1a252f; color: white; border-radius: 10px 10px 0 0; }
-        .parti-container { background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 5px 0; }
-        .filter-area { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.8); display:flex; justify-content:center; align-items:center; z-index:9999; }
-        .btn-xs { padding: 1px 6px; font-size: 10px; font-weight: bold; }
-        .status-badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; }
-        .bg-islemde { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        .bg-bitti { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        :root { --bg-color: #f1f5f9; --primary-dark: #1e293b; --accent-blue: #3b82f6; --border-color: #e2e8f0; }
+        body { background-color: var(--bg-color); font-family: 'Inter', sans-serif; font-size: 13px; color: #334155; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .header-custom { background: var(--primary-dark); color: white; padding: 15px 20px; border-radius: 12px 12px 0 0; }
+        .table thead th { color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 11px; padding: 12px; background: #f8fafc; text-align: center; }
+        .table tbody td { padding: 12px; vertical-align: middle; border-bottom: 1px solid var(--border-color); }
+        
+        /* Gelen Satırı Detaylı Görünüm */
+        .gelis-item { 
+            display: flex; flex-wrap: wrap; gap: 10px; align-items: center; 
+            padding: 8px 15px; margin-bottom: 5px; background: #ffffff; 
+            border: 1px solid #dee2e6; border-radius: 8px; font-size: 12px;
+        }
+        .gelis-label { color: #64748b; font-weight: 700; font-size: 10px; text-transform: uppercase; margin-right: 3px; }
+        .gelis-value { color: #1e293b; font-weight: 700; margin-right: 10px; }
+        .gelis-kg-value { color: #16a34a; font-weight: 800; }
+        
+        .badge-giden { background: #eff6ff; color: #1d4ed8; padding: 5px 10px; border-radius: 6px; font-weight: 700; border: 1px solid #dbeafe; display: inline-block; }
+        .badge-fire { background: #fef2f2; color: #dc2626; padding: 5px 10px; border-radius: 6px; font-weight: 700; border: 1px solid #fee2e2; }
+        .edit-mode-row { background-color: #fffde7 !important; }
+        .stats-box { background: white; padding: 15px; border-radius: 12px; border-bottom: 4px solid var(--accent-blue); text-align: center; }
+        .cursor-pointer { cursor: pointer; }
     </style>
 </head>
-<body class="p-3">
-
-<div id="loading-overlay">
-    <div class="spinner-border text-primary" role="status"></div>
-    <span class="ms-2 fw-bold">Veriler Yükleniyor...</span>
-</div>
+<body class="p-4">
 
 <div class="container-fluid">
-    <div class="card mb-3">
-        <div class="card-header header-custom py-2 d-flex justify-content-between">
-            <strong>Boyahane Cloud Takip v18</strong>
-            <span class="badge bg-info">Bulut Aktif</span>
+    <div class="card mb-4">
+        <div class="header-custom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-white">BOYAHANE TAKİP <span class="badge bg-primary ms-2">v43</span></h5>
+            <div class="btn-group shadow-sm">
+                <input type="radio" class="btn-check" name="filterStatus" id="fIslemde" value="işlemde" checked onchange="window.listele()">
+                <label class="btn btn-outline-light btn-sm px-3" for="fIslemde">İŞLEMDE</label>
+                <input type="radio" class="btn-check" name="filterStatus" id="fBitti" value="bitti" onchange="window.listele()">
+                <label class="btn btn-outline-light btn-sm px-3" for="fBitti">BİTTİ</label>
+                <input type="radio" class="btn-check" name="filterStatus" id="fTumu" value="tumu" onchange="window.listele()">
+                <label class="btn btn-outline-light btn-sm px-3" for="fTumu">TÜMÜ</label>
+            </div>
         </div>
-        <div class="card-body py-3">
+        <div class="card-body bg-white p-3">
             <form id="hamKumasForm" class="row g-2">
-                <input type="hidden" id="editId">
-                <div class="col-md-2"><label class="fw-bold small">Tarih</label><input type="date" class="form-control form-control-sm" id="irsTarih" required></div>
-                <div class="col-md-2"><label class="fw-bold small">İrsaliye No</label><input type="text" class="form-control form-control-sm" id="irsNo" required></div>
-                <div class="col-md-2"><label class="fw-bold small text-primary">Sip No</label><input type="text" class="form-control form-control-sm border-primary" id="sipNo" placeholder="Sipariş No"></div>
-                <div class="col-md-3"><label class="fw-bold small">Kumaş İsmi</label><input type="text" class="form-control form-control-sm" id="kumasIsmi" required></div>
-                <div class="col-md-1"><label class="fw-bold small">TOP</label><input type="number" class="form-control form-control-sm" id="topAdet" required></div>
-                <div class="col-md-2"><label class="fw-bold small">Toplam KG</label><input type="number" step="0.01" class="form-control form-control-sm" id="topKg" required></div>
-                <div class="col-12 text-end pt-2"><button type="submit" class="btn btn-primary btn-sm px-5 fw-bold">KAYDET</button></div>
+                <div class="col-md-2"><label class="small fw-bold">Tarih</label><input type="date" class="form-control form-control-sm" id="irsTarih" required></div>
+                <div class="col-md-2"><label class="small fw-bold">Sipariş No</label><input type="text" class="form-control form-control-sm" id="sipNo" required></div>
+                <div class="col-md-3"><label class="small fw-bold">Kumaş İsmi</label><input type="text" class="form-control form-control-sm" id="kumasIsmi" required></div>
+                <div class="col-md-1"><label class="small fw-bold">TOP</label><input type="number" class="form-control form-control-sm" id="topAdet" required></div>
+                <div class="col-md-2"><label class="small fw-bold">Ham KG</label><input type="number" step="0.01" class="form-control form-control-sm" id="topKg" required></div>
+                <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">YENİ PARTİ AÇ</button></div>
             </form>
         </div>
     </div>
 
-    <div class="filter-area">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-4">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0">🔍</span>
-                    <input type="text" id="searchInput" class="form-control border-start-0" placeholder="Sipariş veya Kumaş ara...">
-                </div>
-            </div>
-            <div class="col-md-8 text-md-end">
-                <div class="btn-group btn-group-sm shadow-sm">
-                    <input type="radio" class="btn-check" name="filterStatus" id="btnIslemde" value="işlemde" checked onchange="listele()">
-                    <label class="btn btn-outline-warning fw-bold px-3" for="btnIslemde">İşlemde Olanlar</label>
-
-                    <input type="radio" class="btn-check" name="filterStatus" id="btnBitenler" value="bitti" onchange="listele()">
-                    <label class="btn btn-outline-success fw-bold px-3" for="btnBitenler">Bitenler</label>
-
-                    <input type="radio" class="btn-check" name="filterStatus" id="btnTumu" value="tümü" onchange="listele()">
-                    <label class="btn btn-outline-secondary fw-bold px-3" for="btnTumu">Tümü</label>
-                </div>
-            </div>
-        </div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="stats-box"><input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Hızlı Arama..." onkeyup="window.listele()"></div></div>
+        <div class="col-md-3"><div class="stats-box border-primary"><div class="small fw-bold text-muted">TOPLAM GİDEN</div><div class="h5 mb-0 fw-bold" id="totalGiden">0.00 KG</div></div></div>
+        <div class="col-md-3"><div class="stats-box border-success"><div class="small fw-bold text-muted">TOPLAM GELEN</div><div class="h5 mb-0 fw-bold text-success" id="totalGelen">0.00 KG</div></div></div>
+        <div class="col-md-3"><div class="stats-box border-danger"><div class="small fw-bold text-muted">GENEL FİRE</div><div class="h5 mb-0 fw-bold text-danger" id="totalFire">0.00 KG</div></div></div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-sm table-hover bg-white border">
-            <thead class="table-dark text-center align-middle">
-                <tr>
-                    <th>Durum</th><th>Giriş Tarihi</th><th>İrsaliye</th><th>Sip No</th><th>Kumaş Bilgisi</th><th>Ham Stok</th><th>Partilenen</th><th>Kalan Stok</th><th class="bg-danger text-white">Toplam Fire</th><th>İşlem</th>
-                </tr>
-            </thead>
-            <tbody id="kumasListesi"></tbody>
-        </table>
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th width="120">DURUM</th>
+                        <th width="100">TARİH</th>
+                        <th width="100">SİP NO</th>
+                        <th class="text-start">KUMAŞ ADI</th>
+                        <th width="130">HAM STOK</th>
+                        <th width="130">GİDEN KG</th>
+                        <th width="150">FİRE (KG/%)</th>
+                        <th width="100">İŞLEM</th>
+                    </tr>
+                </thead>
+                <tbody id="kumasListesi"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <div class="modal fade" id="boyaGelenModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white py-2"><h6 class="modal-title">Gelen Parça İşlemi</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-                <form id="boyaGelenForm" class="p-3 border rounded bg-light mb-3">
-                    <input type="hidden" id="modalKId"><input type="hidden" id="modalPIdx"><input type="hidden" id="modalGIdx">
-                    <div class="row g-2">
-                        <div class="col-6"><label class="small fw-bold">Geliş Tarihi</label><input type="date" class="form-control form-control-sm" id="gTarih" required></div>
-                        <div class="col-6"><label class="small fw-bold">İrsaliye No</label><input type="text" class="form-control form-control-sm" id="gIrs" required></div>
-                        <div class="col-6"><label class="small fw-bold">Gelen TOP</label><input type="number" class="form-control form-control-sm" id="gTop" required></div>
-                        <div class="col-6"><label class="small fw-bold">Gelen KG</label><input type="number" step="0.01" class="form-control form-control-sm" id="gKg" required></div>
-                        <div class="col-12 mt-3"><button type="submit" class="btn btn-success btn-sm w-100 fw-bold">KAYDET</button></div>
-                    </div>
-                </form>
-            </div>
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-success text-white"><h6 class="modal-title" id="modalTitle">Kayıt Düzenle</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body p-4">
+            <form id="boyaGelenForm" class="row g-3">
+                <input type="hidden" id="modalKId"><input type="hidden" id="modalPIdx"><input type="hidden" id="modalGIdx">
+                
+                <div id="gelenFields" class="row g-3">
+                    <div class="col-6"><label class="small fw-bold">Geliş Tarihi</label><input type="date" class="form-control" id="gTarih"></div>
+                    <div class="col-6"><label class="small fw-bold">İrsaliye No</label><input type="text" class="form-control" id="gIrs"></div>
+                    <div class="col-6"><label class="small fw-bold">Parti No</label><input type="text" class="form-control" id="gPartiNo"></div>
+                    <div class="col-3"><label class="small fw-bold">TOP</label><input type="number" class="form-control" id="gTop"></div>
+                    <div class="col-3"><label class="small fw-bold text-success">KG</label><input type="number" step="0.01" class="form-control border-success" id="gKg"></div>
+                </div>
+
+                <div id="partiFields" class="row g-3 d-none">
+                    <div class="col-6"><label class="small fw-bold">Renk Adı</label><input type="text" class="form-control" id="pAd"></div>
+                    <div class="col-6"><label class="small fw-bold">Renk Kodu</label><input type="text" class="form-control" id="pKod"></div>
+                    <div class="col-6"><label class="small fw-bold">Giden Top</label><input type="number" class="form-control" id="pTop"></div>
+                    <div class="col-6"><label class="small fw-bold text-primary">Giden KG</label><input type="number" step="0.01" class="form-control border-primary" id="pKg"></div>
+                </div>
+
+                <div class="col-12 mt-4 text-end">
+                    <button type="button" class="btn btn-danger btn-sm float-start" id="btnSil" onclick="window.kayitSil()">KAYDI SİL</button>
+                    <button type="submit" class="btn btn-success fw-bold px-4">KAYDET</button>
+                </div>
+            </form>
         </div>
-    </div>
+    </div></div>
 </div>
 
 <script type="module">
@@ -108,170 +125,178 @@
         apiKey: "AIzaSyB4zJ0nY_06VnOh-JEmpfhw8EzrvbCiIBA",
         authDomain: "texerp-ea015.firebaseapp.com",
         databaseURL: "https://texerp-ea015-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "texerp-ea015",
-        storageBucket: "texerp-ea015.firebasestorage.app",
-        messagingSenderId: "531851332664",
-        appId: "1:531851332664:web:d2af3d69b6241d7fd8eacd"
+        projectId: "texerp-ea015"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     let kumasData = [];
 
+    window.bugunuAyarla = (id) => {
+        const t = new Date().toISOString().split('T')[0];
+        if(id) document.getElementById(id).value = t;
+        return t;
+    };
+
     onValue(ref(db, 'boyahane_verileri'), (snapshot) => {
         kumasData = snapshot.val() ? Object.values(snapshot.val()) : [];
-        document.getElementById('loading-overlay').style.display = 'none';
-        listele();
+        window.listele();
+        window.bugunuAyarla('irsTarih');
     });
 
     window.veriKaydetBulut = () => set(ref(db, 'boyahane_verileri'), kumasData);
     window.formatTarih = (t) => t ? t.split('-').reverse().join('.') : "-";
-    window.bugunSetle = (id) => { if(document.getElementById(id)) document.getElementById(id).value = new Date().toISOString().split('T')[0]; };
-
-    document.getElementById('searchInput').addEventListener('input', () => listele());
-
-    window.durumDegistir = (id) => {
-        const idx = kumasData.findIndex(k => k.id == id);
-        kumasData[idx].durum = kumasData[idx].durum === 'bitti' ? 'işlemde' : 'bitti';
-        veriKaydetBulut();
-    };
 
     window.listele = () => {
         const tbody = document.getElementById('kumasListesi');
-        const filterKeyword = document.getElementById('searchInput').value.toLowerCase();
-        const selectedFilter = document.querySelector('input[name="filterStatus"]:checked').value;
-        
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const filterVal = document.querySelector('input[name="filterStatus"]:checked').value;
         tbody.innerHTML = '';
-        
-        kumasData.forEach(kumas => {
-            const durum = kumas.durum || 'işlemde';
-            
-            // 1. Filtre: Durum Kontrolü
-            if (selectedFilter !== 'tümü' && durum !== selectedFilter) return;
+        let totalGidenGlobal = 0, totalGelenGlobal = 0;
 
-            // 2. Filtre: Arama Kontrolü
-            const matchSip = kumas.sipNo.toLowerCase().includes(filterKeyword);
-            const matchKumas = kumas.kumasIsmi.toLowerCase().includes(filterKeyword);
-            if (filterKeyword && !matchSip && !matchKumas) return;
+        kumasData.sort((a,b) => new Date(b.irsTarih) - new Date(a.irsTarih)).forEach(kumas => {
+            if (!kumas.kumasIsmi.toLowerCase().includes(search) && !kumas.sipNo.toLowerCase().includes(search)) return;
+            if (filterVal !== "tumu" && kumas.durum !== filterVal) return;
 
-            let tGiden = 0, tGelen = 0;
-            if(kumas.partiler) kumas.partiler.forEach(p => { tGiden += p.kg; if(p.gelisler) p.gelisler.forEach(g => tGelen += g.kg); });
-            const tFireKg = (tGiden - tGelen).toFixed(2);
-            const tFireYuzde = tGiden > 0 ? ((tFireKg / tGiden) * 100).toFixed(2) : "0.00";
+            let kGidenKg = 0, kGelenKg = 0;
+            (kumas.partiler || []).forEach(p => {
+                kGidenKg += parseFloat(p.kg || 0);
+                (p.gelisler || []).forEach(g => kGelenKg += parseFloat(g.kg || 0));
+            });
+
+            const kFireKg = kGidenKg - kGelenKg;
+            const kFireYuzde = kGidenKg > 0 ? ((kFireKg / kGidenKg) * 100).toFixed(2) : 0;
+            totalGidenGlobal += kGidenKg; totalGelenGlobal += kGelenKg;
 
             tbody.insertAdjacentHTML('beforeend', `
-                <tr class="table-ham text-center align-middle ${durum === 'bitti' ? 'opacity-75' : ''}">
+                <tr id="tr-${kumas.id}" class="text-center">
                     <td>
-                        <button class="status-badge bg-${durum} border-0" onclick="durumDegistir(${kumas.id})">
-                            ${durum.toUpperCase()}
-                        </button>
+                        <select onchange="window.durumDegistir(${kumas.id}, this.value)" class="form-select form-select-sm fw-bold">
+                            <option value="işlemde" ${kumas.durum === 'işlemde' ? 'selected' : ''}>İŞLEMDE</option>
+                            <option value="bitti" ${kumas.durum === 'bitti' ? 'selected' : ''}>BİTTİ</option>
+                        </select>
                     </td>
-                    <td>${formatTarih(kumas.irsTarih)}</td>
-                    <td>${kumas.irsNo}</td>
-                    <td class="fw-bold text-primary">${kumas.sipNo}</td>
-                    <td class="text-start"><strong>${kumas.kumasIsmi}</strong></td>
-                    <td>${kumas.topAdet} TOP / ${kumas.topKg} KG</td>
-                    <td class="text-primary fw-bold">${(kumas.partilenenKg || 0).toFixed(2)} KG</td>
-                    <td class="${(kumas.topKg - (kumas.partilenenKg || 0)) <= 0 ? 'text-success' : 'text-danger'} fw-bold">
-                        ${(kumas.topKg - (kumas.partilenenKg || 0)).toFixed(2)} KG
-                    </td>
-                    <td class="bg-light text-danger fw-bold">${tFireKg} KG <small>(%${tFireYuzde})</small></td>
+                    <td><span class="view-mode">${window.formatTarih(kumas.irsTarih)}</span><input type="date" class="form-control form-control-sm edit-input d-none" value="${kumas.irsTarih}"></td>
+                    <td><span class="view-mode fw-bold text-primary">${kumas.sipNo}</span><input type="text" class="form-control form-control-sm edit-input d-none" value="${kumas.sipNo}"></td>
+                    <td class="text-start"><span class="view-mode fw-bold">${kumas.kumasIsmi}</span><input type="text" class="form-control form-control-sm edit-input d-none" value="${kumas.kumasIsmi}"></td>
+                    <td><span class="text-muted small">${kumas.topAdet} T /</span> <b>${kumas.topKg} K</b></td>
+                    <td class="fw-bold text-primary">${kGidenKg.toFixed(2)} KG</td>
+                    <td class="text-danger fw-bold">${kFireKg.toFixed(2)} KG <br><small class="badge bg-danger-subtle text-danger" style="font-size:10px">%${kFireYuzde}</small></td>
                     <td>
-                        <button class="btn btn-xs btn-outline-warning" onclick="duzelt(${kumas.id})">DÜZELT</button>
-                        <button class="btn btn-xs btn-primary" data-bs-toggle="collapse" data-bs-target="#collapse-${kumas.id}">PARTİLE</button>
-                    </td>
-                </tr>
-                <tr class="collapse" id="collapse-${kumas.id}">
-                    <td colspan="10">
-                        <div class="parti-container">
-                            <table class="table table-sm table-bordered bg-white mb-0" style="table-layout: fixed;">
-                                <thead class="table-dark text-center small">
-                                    <tr><th>RENK / KOD</th><th>HAM GİDEN</th><th>BOYADAN GELEN</th><th>FİRE</th><th>İŞLEM</th></tr>
-                                </thead>
-                                <tbody>
-                                    ${(kumas.partiler || []).map((p, idx) => {
-                                        let pGTop = 0, pGKg = 0;
-                                        if(p.gelisler) p.gelisler.forEach(g => { pGTop += g.top; pGKg += g.kg; });
-                                        return `
-                                        <tr class="text-center align-middle bg-light fw-bold">
-                                            <td>${p.ad} <br> <small class="text-muted">${p.kod || '-'}</small></td>
-                                            <td style="background:#fffdf2">${p.top} TOP / ${p.kg} KG</td>
-                                            <td style="background:#f5fffa" class="text-success">${pGTop} TOP / ${pGKg.toFixed(2)} KG</td>
-                                            <td class="text-danger">${(p.kg - pGKg).toFixed(2)} KG <small>(%${p.kg > 0 ? (((p.kg - pGKg) / p.kg) * 100).toFixed(2) : 0})</small></td>
-                                            <td><button class="btn btn-xs btn-success" onclick="boyaGelenAc(${kumas.id}, ${idx})">GELİŞ GİR</button>
-                                                <button class="btn btn-xs btn-warning" onclick="partiDuzenle(${kumas.id}, ${idx})">DÜZELT</button></td>
-                                        </tr>`;
-                                    }).join('')}
-                                    <tr class="bg-white">
-                                        <input type="hidden" id="pEditIdx-${kumas.id}">
-                                        <td><div class="row g-1"><div class="col-6"><input type="text" placeholder="Renk" class="form-control form-control-sm" id="rAd-${kumas.id}"></div><div class="col-6"><input type="text" placeholder="Kod" class="form-control form-control-sm" id="rKod-${kumas.id}"></div></div></td>
-                                        <td><div class="input-group input-group-sm"><input type="number" placeholder="TOP" class="form-control" id="rTop-${kumas.id}"><input type="number" step="0.1" placeholder="KG" class="form-control" id="rKg-${kumas.id}"></div></td>
-                                        <td colspan="3"><button id="btnPartiEkle-${kumas.id}" class="btn btn-sm btn-dark w-100 fw-bold" onclick="partiEkle(${kumas.id})">BOYAYA GÖNDER</button></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="d-flex gap-1 justify-content-center">
+                            <button class="btn btn-sm btn-outline-secondary btn-view" onclick="window.hamDuzenleModu(${kumas.id})"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-success d-none btn-save" onclick="window.hamKaydet(${kumas.id})"><i class="bi bi-check-lg"></i></button>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#cl-${kumas.id}">DETAY</button>
                         </div>
                     </td>
                 </tr>
+                <tr class="collapse" id="cl-${kumas.id}"><td colspan="8" class="bg-light p-3">
+                    <div class="card p-3 shadow-sm border">
+                        <table class="table table-sm table-bordered bg-white mb-0">
+                            <thead class="small"><tr><th>RENK / KOD</th><th width="200">GİDEN (HAM)</th><th>GELEN BOYALI GİRİŞLERİ (ETİKETLİ)</th><th width="150">RENK FİRESİ</th><th width="80">İŞLEM</th></tr></thead>
+                            <tbody>
+                                ${(kumas.partiler || []).map((p, pIdx) => {
+                                    let pGelenKg = 0, pGelenTop = 0;
+                                    (p.gelisler || []).forEach(g => { pGelenKg += parseFloat(g.kg); pGelenTop += parseInt(g.top); });
+                                    const pFireKg = p.kg - pGelenKg; const pFireYuzde = p.kg > 0 ? ((pFireKg / p.kg) * 100).toFixed(2) : 0;
+                                    return `
+                                    <tr>
+                                        <td><div class="d-flex justify-content-between"><span><b class="fs-6">${p.ad}</b><br><small class="text-muted">${p.kod || '-'}</small></span><i class="bi bi-pencil text-primary cursor-pointer" onclick="window.partiDuzenleAc(${kumas.id}, ${pIdx})"></i></div></td>
+                                        <td class="text-center align-middle"><div class="badge-giden">${p.top} Top / ${p.kg} Kg</div></td>
+                                        <td class="p-2">
+                                            ${(p.gelisler || []).map((g, gIdx) => `
+                                                <div class="gelis-item">
+                                                    <span><span class="gelis-label">TARİH:</span><span class="gelis-value">${window.formatTarih(g.tarih)}</span></span>
+                                                    <span><span class="gelis-label">İRS NO:</span><span class="gelis-value">${g.irsNo}</span></span>
+                                                    <span><span class="gelis-label">PARTİ:</span><span class="gelis-value">${g.partiNo}</span></span>
+                                                    <span><span class="gelis-label">TOP:</span><span class="gelis-value">${g.top} T</span></span>
+                                                    <span><span class="gelis-label text-success">KG:</span><span class="gelis-kg-value">${parseFloat(g.kg).toFixed(2)} KG</span></span>
+                                                    <i class="bi bi-pencil-square text-secondary ms-auto cursor-pointer" onclick="window.boyaDuzenleAc(${kumas.id}, ${pIdx}, ${gIdx})"></i>
+                                                </div>
+                                            `).join('')}
+                                            <div class="mt-2 text-end fw-bold small text-success">TOPLAM GELEN: ${pGelenTop} TOP / ${pGelenKg.toFixed(2)} KG</div>
+                                        </td>
+                                        <td class="text-center align-middle"><div class="badge-fire">${pFireKg.toFixed(2)} KG <br> %${pFireYuzde}</div></td>
+                                        <td class="text-center align-middle"><button class="btn btn-sm btn-success fw-bold" onclick="window.boyaGelenAc(${kumas.id}, ${pIdx})">+Giriş</button></td>
+                                    </tr>`;
+                                }).join('')}
+                                <tr class="bg-light">
+                                    <td><input type="text" placeholder="Renk Adı" class="form-control form-control-sm mb-1" id="rAd-${kumas.id}"><input type="text" placeholder="Kod" class="form-control form-control-sm" id="rKod-${kumas.id}"></td>
+                                    <td><input type="number" placeholder="Top" class="form-control form-control-sm mb-1" id="rTop-${kumas.id}"><input type="number" step="0.01" placeholder="Kg" class="form-control form-control-sm" id="rKg-${kumas.id}"></td>
+                                    <td colspan="3" class="align-middle"><button class="btn btn-dark w-100 fw-bold py-2" onclick="window.partiEkle(${kumas.id})">BOYAHANEYE YENİ RENK ÇIKIŞI YAP</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </td></tr>
             `);
         });
+
+        document.getElementById('totalGiden').innerText = totalGidenGlobal.toFixed(2) + " KG";
+        document.getElementById('totalGelen').innerText = totalGelenGlobal.toFixed(2) + " KG";
+        const totalFireGlobal = totalGidenGlobal - totalGelenGlobal;
+        const totalFireGlobalY = totalGidenGlobal > 0 ? ((totalFireGlobal/totalGidenGlobal)*100).toFixed(2) : 0;
+        document.getElementById('totalFire').innerText = totalFireGlobal.toFixed(2) + " KG (%" + totalFireGlobalY + ")";
     };
 
-    // Form Submit
-    document.getElementById('hamKumasForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const editId = document.getElementById('editId').value;
-        const sipNo = document.getElementById('sipNo').value.trim();
-        const inputTop = parseInt(document.getElementById('topAdet').value);
-        const inputKg = parseFloat(document.getElementById('topKg').value);
-        const irsNo = document.getElementById('irsNo').value;
-
-        if (!editId && sipNo && sipNo !== "-") {
-            const mIdx = kumasData.findIndex(k => k.sipNo === sipNo);
-            if (mIdx !== -1) {
-                kumasData[mIdx].topAdet += inputTop;
-                kumasData[mIdx].topKg += inputKg;
-                if (!kumasData[mIdx].irsNo.includes(irsNo)) kumasData[mIdx].irsNo += ` / ${irsNo}`;
-                resetForm(); veriKaydetBulut(); return;
-            }
-        }
-
-        const id = editId ? parseInt(editId) : Date.now();
-        const mIdx = kumasData.findIndex(k => k.id == id);
-        const veri = {
-            id, irsTarih: document.getElementById('irsTarih').value, irsNo, sipNo: sipNo || '-',
-            kumasIsmi: document.getElementById('kumasIsmi').value, topAdet: inputTop, topKg: inputKg,
-            durum: mIdx > -1 ? (kumasData[mIdx].durum || 'işlemde') : 'işlemde',
-            partilenenKg: mIdx > -1 ? (kumasData[mIdx].partilenenKg || 0) : 0,
-            partiler: mIdx > -1 ? (kumasData[mIdx].partiler || []) : []
-        };
-        if(mIdx > -1) kumasData[mIdx] = veri; else kumasData.push(veri);
-        resetForm(); veriKaydetBulut();
-    });
-
-    function resetForm() { document.getElementById('hamKumasForm').reset(); document.getElementById('editId').value = ""; bugunSetle('irsTarih'); }
-
-    window.partiEkle = (id) => {
-        const k = kumasData.find(k => k.id == id);
-        const idx = document.getElementById(`pEditIdx-${id}`).value;
-        const ad = document.getElementById(`rAd-${id}`).value;
-        const kg = parseFloat(document.getElementById(`rKg-${id}`).value);
-        if(!ad || isNaN(kg)) return;
-        if(!k.partiler) k.partiler = [];
-        const pVeri = { ad, kod: document.getElementById(`rKod-${id}`).value, top: parseInt(document.getElementById(`rTop-${id}`).value) || 0, kg, gelisler: (idx!=="" ? k.partiler[idx].gelisler : []) };
-        if(idx==="") k.partiler.push(pVeri); else k.partiler[idx] = pVeri;
-        k.partilenenKg = k.partiler.reduce((t, p) => t + p.kg, 0);
-        veriKaydetBulut();
+    // --- Fonksiyonlar ---
+    window.hamDuzenleModu = (id) => {
+        const row = document.getElementById(`tr-${id}`);
+        row.classList.add('edit-mode-row');
+        row.querySelectorAll('.view-mode, .btn-view').forEach(el => el.classList.add('d-none'));
+        row.querySelectorAll('.edit-input, .btn-save').forEach(el => el.classList.remove('d-none'));
+    };
+    window.hamKaydet = (id) => {
+        const row = document.getElementById(`tr-${id}`);
+        const inputs = row.querySelectorAll('.edit-input');
+        const k = kumasData.find(x => x.id == id);
+        k.irsTarih = inputs[0].value; k.sipNo = inputs[1].value; k.kumasIsmi = inputs[2].value;
+        window.veriKaydetBulut();
     };
 
-    window.boyaGelenAc = (kId, pIdx, gIdx = null) => {
-        const modal = new bootstrap.Modal(document.getElementById('boyaGelenModal'));
-        document.getElementById('modalKId').value = kId; document.getElementById('modalPIdx').value = pIdx; document.getElementById('modalGIdx').value = gIdx !== null ? gIdx : "";
-        if(gIdx !== null) {
-            const g = kumasData.find(k => k.id == kId).partiler[pIdx].gelisler[gIdx];
-            document.getElementById('gTarih').value = g.tarih; document.getElementById('gIrs').value = g.irsNo; document.getElementById('gTop').value = g.top; document.getElementById('gKg').value = g.kg;
-        } else { document.getElementById('boyaGelenForm').reset(); bugunSetle('gTarih'); }
-        modal.show();
+    window.partiDuzenleAc = (kId, pIdx) => {
+        const p = kumasData.find(k => k.id == kId).partiler[pIdx];
+        document.getElementById('modalKId').value = kId; document.getElementById('modalPIdx').value = pIdx;
+        document.getElementById('modalGIdx').value = "PARTI_EDIT";
+        document.getElementById('pAd').value = p.ad; document.getElementById('pKod').value = p.kod;
+        document.getElementById('pTop').value = p.top; document.getElementById('pKg').value = p.kg;
+        document.getElementById('gelenFields').classList.add('d-none');
+        document.getElementById('partiFields').classList.remove('d-none');
+        document.getElementById('modalTitle').innerText = "Renk Partisi Düzenle";
+        new bootstrap.Modal(document.getElementById('boyaGelenModal')).show();
+    };
+
+    window.boyaDuzenleAc = (kId, pIdx, gIdx) => {
+        const g = kumasData.find(k => k.id == kId).partiler[pIdx].gelisler[gIdx];
+        document.getElementById('modalKId').value = kId; document.getElementById('modalPIdx').value = pIdx; document.getElementById('modalGIdx').value = gIdx;
+        document.getElementById('gTarih').value = g.tarih; document.getElementById('gIrs').value = g.irsNo;
+        document.getElementById('gPartiNo').value = g.partiNo; document.getElementById('gTop').value = g.top; document.getElementById('gKg').value = g.kg;
+        document.getElementById('partiFields').classList.add('d-none');
+        document.getElementById('gelenFields').classList.remove('d-none');
+        document.getElementById('modalTitle').innerText = "Boyalı Giriş Düzenle";
+        new bootstrap.Modal(document.getElementById('boyaGelenModal')).show();
+    };
+
+    window.boyaGelenAc = (kId, pIdx) => {
+        document.getElementById('boyaGelenForm').reset();
+        window.bugunuAyarla('gTarih');
+        document.getElementById('modalKId').value = kId; document.getElementById('modalPIdx').value = pIdx; document.getElementById('modalGIdx').value = "";
+        document.getElementById('partiFields').classList.add('d-none');
+        document.getElementById('gelenFields').classList.remove('d-none');
+        document.getElementById('modalTitle').innerText = "Yeni Boyalı Giriş";
+        new bootstrap.Modal(document.getElementById('boyaGelenModal')).show();
+    };
+
+    window.kayitSil = () => {
+        if(!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
+        const kId = document.getElementById('modalKId').value;
+        const pIdx = document.getElementById('modalPIdx').value;
+        const gIdx = document.getElementById('modalGIdx').value;
+        const k = kumasData.find(x => x.id == kId);
+        if(gIdx === "PARTI_EDIT") k.partiler.splice(pIdx, 1);
+        else k.partiler[pIdx].gelisler.splice(gIdx, 1);
+        bootstrap.Modal.getInstance(document.getElementById('boyaGelenModal')).hide();
+        window.veriKaydetBulut();
     };
 
     document.getElementById('boyaGelenForm').addEventListener('submit', (e) => {
@@ -279,29 +304,39 @@
         const kId = document.getElementById('modalKId').value;
         const pIdx = document.getElementById('modalPIdx').value;
         const gIdx = document.getElementById('modalGIdx').value;
-        const parti = kumasData.find(k => k.id == kId).partiler[pIdx];
-        const gVeri = { tarih: document.getElementById('gTarih').value, irsNo: document.getElementById('gIrs').value, top: parseInt(document.getElementById('gTop').value), kg: parseFloat(document.getElementById('gKg').value) };
-        if(!parti.gelisler) parti.gelisler = [];
-        if(gIdx === "") parti.gelisler.push(gVeri); else parti.gelisler[gIdx] = gVeri;
+        const k = kumasData.find(x => x.id == kId);
+        if(gIdx === "PARTI_EDIT") {
+            k.partiler[pIdx].ad = document.getElementById('pAd').value;
+            k.partiler[pIdx].kod = document.getElementById('pKod').value;
+            k.partiler[pIdx].top = document.getElementById('pTop').value;
+            k.partiler[pIdx].kg = document.getElementById('pKg').value;
+        } else {
+            const v = { tarih: document.getElementById('gTarih').value, irsNo: document.getElementById('gIrs').value, partiNo: document.getElementById('gPartiNo').value, top: document.getElementById('gTop').value, kg: document.getElementById('gKg').value };
+            if(!k.partiler[pIdx].gelisler) k.partiler[pIdx].gelisler = [];
+            if(gIdx === "") k.partiler[pIdx].gelisler.push(v); else k.partiler[pIdx].gelisler[gIdx] = v;
+        }
         bootstrap.Modal.getInstance(document.getElementById('boyaGelenModal')).hide();
-        veriKaydetBulut();
+        window.veriKaydetBulut();
     });
 
-    window.duzelt = (id) => {
+    document.getElementById('hamKumasForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        kumasData.push({ id: Date.now(), irsTarih: document.getElementById('irsTarih').value, sipNo: document.getElementById('sipNo').value, kumasIsmi: document.getElementById('kumasIsmi').value, topAdet: document.getElementById('topAdet').value, topKg: document.getElementById('topKg').value, durum: 'işlemde', partiler: [] });
+        window.veriKaydetBulut();
+        document.getElementById('hamKumasForm').reset();
+        window.bugunuAyarla('irsTarih');
+    });
+
+    window.partiEkle = (id) => {
         const k = kumasData.find(x => x.id == id);
-        document.getElementById('editId').value = k.id; document.getElementById('irsTarih').value = k.irsTarih; document.getElementById('irsNo').value = k.irsNo;
-        document.getElementById('sipNo').value = k.sipNo; document.getElementById('kumasIsmi').value = k.kumasIsmi; document.getElementById('topAdet').value = k.topAdet; document.getElementById('topKg').value = k.topKg;
-        window.scrollTo(0,0);
+        const ad = document.getElementById(`rAd-${id}`).value; const kg = document.getElementById(`rKg-${id}`).value;
+        if(!ad || !kg) return alert("Hata: Renk ve KG girmelisiniz!");
+        if(!k.partiler) k.partiler = [];
+        k.partiler.push({ ad, kod: document.getElementById(`rKod-${id}`).value, top: document.getElementById(`rTop-${id}`).value || 0, kg, gelisler: [] });
+        window.veriKaydetBulut();
     };
 
-    window.partiDuzenle = (kId, pIdx) => {
-        const p = kumasData.find(k => k.id == kId).partiler[pIdx];
-        document.getElementById(`rAd-${kId}`).value = p.ad; document.getElementById(`rKod-${kId}`).value = p.kod || "";
-        document.getElementById(`rTop-${kId}`).value = p.top; document.getElementById(`rKg-${kId}`).value = p.kg;
-        document.getElementById(`pEditIdx-${kId}`).value = pIdx; document.getElementById(`btnPartiEkle-${kId}`).innerText = "GÜNCELLE";
-    };
-
-    bugunSetle('irsTarih');
+    window.durumDegistir = (id, v) => { kumasData.find(k => k.id == id).durum = v; window.veriKaydetBulut(); };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
