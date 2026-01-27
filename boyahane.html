@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boyahane Takip v43 - Detaylı Etiketli Görünüm</title>
+    <title>Boyahane Takip v43 - Stok Takip</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -14,7 +14,6 @@
         .table thead th { color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 11px; padding: 12px; background: #f8fafc; text-align: center; }
         .table tbody td { padding: 12px; vertical-align: middle; border-bottom: 1px solid var(--border-color); }
         
-        /* Gelen Satırı Detaylı Görünüm */
         .gelis-item { 
             display: flex; flex-wrap: wrap; gap: 10px; align-items: center; 
             padding: 8px 15px; margin-bottom: 5px; background: #ffffff; 
@@ -26,6 +25,7 @@
         
         .badge-giden { background: #eff6ff; color: #1d4ed8; padding: 5px 10px; border-radius: 6px; font-weight: 700; border: 1px solid #dbeafe; display: inline-block; }
         .badge-fire { background: #fef2f2; color: #dc2626; padding: 5px 10px; border-radius: 6px; font-weight: 700; border: 1px solid #fee2e2; }
+        .badge-kalan { background: #fff7ed; color: #c2410c; padding: 5px 10px; border-radius: 6px; font-weight: 700; border: 1px solid #ffedd5; }
         .edit-mode-row { background-color: #fffde7 !important; }
         .stats-box { background: white; padding: 15px; border-radius: 12px; border-bottom: 4px solid var(--accent-blue); text-align: center; }
         .cursor-pointer { cursor: pointer; }
@@ -48,19 +48,21 @@
         </div>
         <div class="card-body bg-white p-3">
             <form id="hamKumasForm" class="row g-2">
-                <div class="col-md-2"><label class="small fw-bold">Tarih</label><input type="date" class="form-control form-control-sm" id="irsTarih" required></div>
+                <div class="col-md-1"><label class="small fw-bold">Tarih</label><input type="date" class="form-control form-control-sm" id="irsTarih" required></div>
+                <div class="col-md-2"><label class="small fw-bold">İrsaliye No</label><input type="text" class="form-control form-control-sm" id="anaIrsNo" required></div>
                 <div class="col-md-2"><label class="small fw-bold">Sipariş No</label><input type="text" class="form-control form-control-sm" id="sipNo" required></div>
                 <div class="col-md-3"><label class="small fw-bold">Kumaş İsmi</label><input type="text" class="form-control form-control-sm" id="kumasIsmi" required></div>
                 <div class="col-md-1"><label class="small fw-bold">TOP</label><input type="number" class="form-control form-control-sm" id="topAdet" required></div>
-                <div class="col-md-2"><label class="small fw-bold">Ham KG</label><input type="number" step="0.01" class="form-control form-control-sm" id="topKg" required></div>
+                <div class="col-md-1"><label class="small fw-bold">Ham KG</label><input type="number" step="0.01" class="form-control form-control-sm" id="topKg" required></div>
                 <div class="col-md-2 d-flex align-items-end"><button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">YENİ PARTİ AÇ</button></div>
             </form>
         </div>
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="stats-box"><input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Hızlı Arama..." onkeyup="window.listele()"></div></div>
-        <div class="col-md-3"><div class="stats-box border-primary"><div class="small fw-bold text-muted">TOPLAM GİDEN</div><div class="h5 mb-0 fw-bold" id="totalGiden">0.00 KG</div></div></div>
+        <div class="col-md-2"><div class="stats-box"><input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Hızlı Arama..." onkeyup="window.listele()"></div></div>
+        <div class="col-md-2"><div class="stats-box border-warning"><div class="small fw-bold text-muted">TOPLAM KALAN STOK</div><div class="h5 mb-0 fw-bold text-warning" id="totalKalanStok">0.00 KG</div></div></div>
+        <div class="col-md-2"><div class="stats-box border-primary"><div class="small fw-bold text-muted">TOPLAM GİDEN</div><div class="h5 mb-0 fw-bold" id="totalGiden">0.00 KG</div></div></div>
         <div class="col-md-3"><div class="stats-box border-success"><div class="small fw-bold text-muted">TOPLAM GELEN</div><div class="h5 mb-0 fw-bold text-success" id="totalGelen">0.00 KG</div></div></div>
         <div class="col-md-3"><div class="stats-box border-danger"><div class="small fw-bold text-muted">GENEL FİRE</div><div class="h5 mb-0 fw-bold text-danger" id="totalFire">0.00 KG</div></div></div>
     </div>
@@ -72,12 +74,14 @@
                     <tr>
                         <th width="120">DURUM</th>
                         <th width="100">TARİH</th>
+                        <th width="100">İRS NO</th>
                         <th width="100">SİP NO</th>
                         <th class="text-start">KUMAŞ ADI</th>
-                        <th width="130">HAM STOK</th>
-                        <th width="130">GİDEN KG</th>
-                        <th width="150">FİRE (KG/%)</th>
-                        <th width="100">İŞLEM</th>
+                        <th width="140">GİRİŞ STOK</th>
+                        <th width="140">KALAN HAM</th>
+                        <th width="120">GİDEN KG</th>
+                        <th width="130">FİRE (KG/%)</th>
+                        <th width="140">İŞLEM</th>
                     </tr>
                 </thead>
                 <tbody id="kumasListesi"></tbody>
@@ -139,12 +143,18 @@
     };
 
     onValue(ref(db, 'boyahane_verileri'), (snapshot) => {
-        kumasData = snapshot.val() ? Object.values(snapshot.val()) : [];
+        const data = snapshot.val();
+        kumasData = data ? Object.values(data) : [];
         window.listele();
         window.bugunuAyarla('irsTarih');
     });
 
-    window.veriKaydetBulut = () => set(ref(db, 'boyahane_verileri'), kumasData);
+    window.veriKaydetBulut = () => {
+        const dataToSave = {};
+        kumasData.forEach(item => { dataToSave[item.id] = item; });
+        set(ref(db, 'boyahane_verileri'), dataToSave);
+    };
+    
     window.formatTarih = (t) => t ? t.split('-').reverse().join('.') : "-";
 
     window.listele = () => {
@@ -152,10 +162,10 @@
         const search = document.getElementById('searchInput').value.toLowerCase();
         const filterVal = document.querySelector('input[name="filterStatus"]:checked').value;
         tbody.innerHTML = '';
-        let totalGidenGlobal = 0, totalGelenGlobal = 0;
+        let totalGidenGlobal = 0, totalGelenGlobal = 0, totalKalanGlobal = 0;
 
         kumasData.sort((a,b) => new Date(b.irsTarih) - new Date(a.irsTarih)).forEach(kumas => {
-            if (!kumas.kumasIsmi.toLowerCase().includes(search) && !kumas.sipNo.toLowerCase().includes(search)) return;
+            if (!kumas.kumasIsmi.toLowerCase().includes(search) && !kumas.sipNo.toLowerCase().includes(search) && !(kumas.anaIrsNo || "").toLowerCase().includes(search)) return;
             if (filterVal !== "tumu" && kumas.durum !== filterVal) return;
 
             let kGidenKg = 0, kGelenKg = 0;
@@ -164,9 +174,13 @@
                 (p.gelisler || []).forEach(g => kGelenKg += parseFloat(g.kg || 0));
             });
 
+            const kKalanHam = parseFloat(kumas.topKg) - kGidenKg;
             const kFireKg = kGidenKg - kGelenKg;
             const kFireYuzde = kGidenKg > 0 ? ((kFireKg / kGidenKg) * 100).toFixed(2) : 0;
-            totalGidenGlobal += kGidenKg; totalGelenGlobal += kGelenKg;
+            
+            totalGidenGlobal += kGidenKg; 
+            totalGelenGlobal += kGelenKg;
+            totalKalanGlobal += kKalanHam;
 
             tbody.insertAdjacentHTML('beforeend', `
                 <tr id="tr-${kumas.id}" class="text-center">
@@ -177,9 +191,17 @@
                         </select>
                     </td>
                     <td><span class="view-mode">${window.formatTarih(kumas.irsTarih)}</span><input type="date" class="form-control form-control-sm edit-input d-none" value="${kumas.irsTarih}"></td>
+                    <td><span class="view-mode fw-bold text-secondary">${kumas.anaIrsNo || '-'}</span><input type="text" class="form-control form-control-sm edit-input d-none" value="${kumas.anaIrsNo || ''}"></td>
                     <td><span class="view-mode fw-bold text-primary">${kumas.sipNo}</span><input type="text" class="form-control form-control-sm edit-input d-none" value="${kumas.sipNo}"></td>
                     <td class="text-start"><span class="view-mode fw-bold">${kumas.kumasIsmi}</span><input type="text" class="form-control form-control-sm edit-input d-none" value="${kumas.kumasIsmi}"></td>
-                    <td><span class="text-muted small">${kumas.topAdet} T /</span> <b>${kumas.topKg} K</b></td>
+                    <td>
+                        <span class="view-mode"><span class="text-muted small">${kumas.topAdet} T /</span> <b>${kumas.topKg} K</b></span>
+                        <div class="edit-input d-none d-flex gap-1 justify-content-center">
+                           <input type="number" class="form-control form-control-sm" placeholder="Top" value="${kumas.topAdet}" style="width:50px">
+                           <input type="number" step="0.01" class="form-control form-control-sm" placeholder="Kg" value="${kumas.topKg}" style="width:70px">
+                        </div>
+                    </td>
+                    <td><div class="badge-kalan">${kKalanHam.toFixed(2)} KG</div></td>
                     <td class="fw-bold text-primary">${kGidenKg.toFixed(2)} KG</td>
                     <td class="text-danger fw-bold">${kFireKg.toFixed(2)} KG <br><small class="badge bg-danger-subtle text-danger" style="font-size:10px">%${kFireYuzde}</small></td>
                     <td>
@@ -187,10 +209,11 @@
                             <button class="btn btn-sm btn-outline-secondary btn-view" onclick="window.hamDuzenleModu(${kumas.id})"><i class="bi bi-pencil"></i></button>
                             <button class="btn btn-sm btn-success d-none btn-save" onclick="window.hamKaydet(${kumas.id})"><i class="bi bi-check-lg"></i></button>
                             <button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#cl-${kumas.id}">DETAY</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="window.anaSiparisSil(${kumas.id})"><i class="bi bi-trash"></i></button>
                         </div>
                     </td>
                 </tr>
-                <tr class="collapse" id="cl-${kumas.id}"><td colspan="8" class="bg-light p-3">
+                <tr class="collapse" id="cl-${kumas.id}"><td colspan="10" class="bg-light p-3">
                     <div class="card p-3 shadow-sm border">
                         <table class="table table-sm table-bordered bg-white mb-0">
                             <thead class="small"><tr><th>RENK / KOD</th><th width="200">GİDEN (HAM)</th><th>GELEN BOYALI GİRİŞLERİ (ETİKETLİ)</th><th width="150">RENK FİRESİ</th><th width="80">İŞLEM</th></tr></thead>
@@ -234,24 +257,37 @@
 
         document.getElementById('totalGiden').innerText = totalGidenGlobal.toFixed(2) + " KG";
         document.getElementById('totalGelen').innerText = totalGelenGlobal.toFixed(2) + " KG";
+        document.getElementById('totalKalanStok').innerText = totalKalanGlobal.toFixed(2) + " KG";
         const totalFireGlobal = totalGidenGlobal - totalGelenGlobal;
         const totalFireGlobalY = totalGidenGlobal > 0 ? ((totalFireGlobal/totalGidenGlobal)*100).toFixed(2) : 0;
         document.getElementById('totalFire').innerText = totalFireGlobal.toFixed(2) + " KG (%" + totalFireGlobalY + ")";
     };
 
-    // --- Fonksiyonlar ---
+    window.anaSiparisSil = (id) => {
+        if(!confirm("BU SİPARİŞİ VE TÜM ALT VERİLERİNİ SİLMEK İSTEDİĞİNİZE EMİN MİSİNİZ?")) return;
+        kumasData = kumasData.filter(x => x.id != id);
+        window.veriKaydetBulut();
+    };
+
     window.hamDuzenleModu = (id) => {
         const row = document.getElementById(`tr-${id}`);
         row.classList.add('edit-mode-row');
         row.querySelectorAll('.view-mode, .btn-view').forEach(el => el.classList.add('d-none'));
         row.querySelectorAll('.edit-input, .btn-save').forEach(el => el.classList.remove('d-none'));
     };
+
     window.hamKaydet = (id) => {
         const row = document.getElementById(`tr-${id}`);
-        const inputs = row.querySelectorAll('.edit-input');
+        const inputs = row.querySelectorAll('input');
         const k = kumasData.find(x => x.id == id);
-        k.irsTarih = inputs[0].value; k.sipNo = inputs[1].value; k.kumasIsmi = inputs[2].value;
+        k.irsTarih = inputs[0].value; 
+        k.anaIrsNo = inputs[1].value; 
+        k.sipNo = inputs[2].value; 
+        k.kumasIsmi = inputs[3].value;
+        k.topAdet = inputs[4].value;
+        k.topKg = inputs[5].value;
         window.veriKaydetBulut();
+        window.listele();
     };
 
     window.partiDuzenleAc = (kId, pIdx) => {
@@ -321,7 +357,17 @@
 
     document.getElementById('hamKumasForm').addEventListener('submit', (e) => {
         e.preventDefault();
-        kumasData.push({ id: Date.now(), irsTarih: document.getElementById('irsTarih').value, sipNo: document.getElementById('sipNo').value, kumasIsmi: document.getElementById('kumasIsmi').value, topAdet: document.getElementById('topAdet').value, topKg: document.getElementById('topKg').value, durum: 'işlemde', partiler: [] });
+        kumasData.push({ 
+            id: Date.now(), 
+            irsTarih: document.getElementById('irsTarih').value, 
+            anaIrsNo: document.getElementById('anaIrsNo').value,
+            sipNo: document.getElementById('sipNo').value, 
+            kumasIsmi: document.getElementById('kumasIsmi').value, 
+            topAdet: document.getElementById('topAdet').value, 
+            topKg: document.getElementById('topKg').value, 
+            durum: 'işlemde', 
+            partiler: [] 
+        });
         window.veriKaydetBulut();
         document.getElementById('hamKumasForm').reset();
         window.bugunuAyarla('irsTarih');
