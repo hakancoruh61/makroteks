@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAKROTEKS | Puantaj Sistemi v9.4</title>
+    <title>MAKROTEKS | Puantaj Sistemi v9.6</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     
@@ -47,64 +47,29 @@
         .btn-main { background: var(--primary); color: white; }
         .btn-success { background: #10b981; color: white; }
 
-        .table-wrapper { width: 100%; }
         table { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }
         th, td { border: 1px solid var(--table-border); text-align: center; height: 22px; }
         th { background: #f1f5f9; font-size: 9px; }
 
         .no-col { width: 25px; font-weight: bold; background: #f1f5f9; }
-        /* Personel Adı Soyadı Kalınlaştırıldı */
         .name-col { text-align: left; padding-left: 5px; width: 140px; overflow: hidden; white-space: nowrap; font-weight: 800; }
         .day-cell { width: 20px; cursor: pointer; font-weight: 900; font-size: 12px; }
         
         .present { color: var(--success-blue) !important; background-color: #f0f9ff; }
         .absent { background-color: var(--danger-bg) !important; color: #ffffff !important; }
 
-        /* Toplam Gün Sütunu Kalınlaştırıldı */
         .summary-col { font-weight: 900; background: #f8fafc; width: 30px; font-size: 11px; }
         .money-col { font-weight: 700; width: 70px; }
 
-        .notes-box { 
-            margin-top: 15px; 
-            border: 1px solid var(--table-border); 
-            border-radius: 4px; 
-            width: 100%;
-        }
-        .notes-box h3 { 
-            margin: 0; 
-            font-size: 11px; 
-            background: #f1f5f9; 
-            padding: 5px 10px; 
-            border-bottom: 1px solid var(--table-border);
-        }
+        .notes-box { margin-top: 15px; border: 1px solid var(--table-border); border-radius: 4px; width: 100%; }
+        .notes-box h3 { margin: 0; font-size: 11px; background: #f1f5f9; padding: 5px 10px; border-bottom: 1px solid var(--table-border); }
         
-        #aylikNot { 
-            width: 100%; 
-            border: none; 
-            background: transparent; 
-            font-size: 13px; 
-            line-height: 1.5em;
-            padding: 10px;
-            min-height: 15em; 
-            resize: none; 
-            box-sizing: border-box;
-            display: block;
-            overflow: hidden;
-            white-space: pre-wrap;
-        }
+        #aylikNot { width: 100%; border: none; background: transparent; font-size: 13px; line-height: 1.5em; padding: 10px; min-height: 15em; resize: none; box-sizing: border-box; display: block; overflow: hidden; white-space: pre-wrap; }
 
         @media print {
-            @page { size: A4 portrait; margin: 10mm; }
             .no-print { display: none !important; }
             .container { width: 100%; max-width: 100%; padding: 0; border: none; }
-            body { background: white; padding: 0; }
-            .notes-box { border: 1px solid #000; break-inside: avoid; }
-            #aylikNot { 
-                height: auto !important; 
-                min-height: 15em;
-                background-image: linear-gradient(#eee 1px, transparent 1px);
-                background-size: 100% 1.5em;
-            }
+            #aylikNot { height: auto !important; min-height: 15em; background-image: linear-gradient(#eee 1px, transparent 1px); background-size: 100% 1.5em; }
         }
     </style>
 </head>
@@ -119,7 +84,7 @@
     <div class="toolbar no-print">
         <div class="input-group">
             <label>Dönem</label>
-            <select id="aySecici" onchange="listele()"></select>
+            <select id="aySecici" onchange="verileriDinle()"></select>
         </div>
         <div class="input-group">
             <label>Personel Ekle</label>
@@ -164,11 +129,6 @@
 
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const pRef = db.ref("puantaj/personeller");
-    const vRef = db.ref("puantaj/kayitlar");
-    const aRef = db.ref("puantaj/ayarlar");
-
-    let personeller = {}, tumVeriler = {}, ayarlar = {};
 
     function boyutlandir(el) {
         el.style.height = 'auto';
@@ -192,24 +152,36 @@
             let th = document.createElement('th'); th.innerText = i; row.appendChild(th);
         }
         row.innerHTML += `<th class="summary-col">GÜN</th><th class="summary-col">MAK.</th><th class="money-col">TUTAR</th><th class="no-print" style="width:25px"></th>`;
+        
+        verileriDinle();
+    };
 
-        pRef.on("value", snap => { personeller = snap.val() || {}; listele(); });
-        vRef.on("value", snap => { tumVeriler = snap.val() || {}; listele(); });
-        aRef.on("value", snap => { 
-            ayarlar = snap.val() || {}; 
-            const ayKey = document.getElementById('aySecici').value;
+    function verileriDinle() {
+        const ayKey = document.getElementById('aySecici').value;
+        const s = document.getElementById('aySecici');
+        document.getElementById('dynamicTitle').innerText = `MAKROTEKS ${s.options[s.selectedIndex].text} PUANTAJ RAPORU`;
+
+        // Tüm verileri ana "puantaj" yolundan dinle
+        db.ref("puantaj").on("value", snap => {
+            const allData = snap.val() || {};
+            const ayarlar = allData.ayarlar || {};
+            const kayitlar = allData.kayitlar || {};
+            
+            // Eğer bu ay için özel bir personel listesi yoksa, genel listeyi kullan (İlk geçiş için)
+            // Ama bundan sonra eklenen/silinenler sadece bu aya özel kaydedilecek
+            const personeller = allData.aylik_personeller?.[ayKey] || allData.personeller || {};
+            
+            renderTable(personeller, kayitlar, ayarlar, ayKey);
+            
+            // Ayarlar ve Notlar
             document.getElementById('birimFiyat').value = ayarlar[ayKey]?.birimFiyat || 0;
             const notArea = document.getElementById('aylikNot');
             notArea.value = ayarlar[ayKey]?.notlar || "";
             setTimeout(() => boyutlandir(notArea), 300);
-            listele(); 
         });
-    };
+    }
 
-    function listele() {
-        const s = document.getElementById('aySecici');
-        const ayKey = s.value;
-        document.getElementById('dynamicTitle').innerText = `MAKROTEKS ${s.options[s.selectedIndex].text} PUANTAJ RAPORU`;
+    function renderTable(personeller, kayitlar, ayarlar, ayKey) {
         const body = document.getElementById('pBody');
         const bFiyat = ayarlar[ayKey]?.birimFiyat || 0;
         body.innerHTML = "";
@@ -219,20 +191,21 @@
             let p = personeller[pId];
             let tGun = 0;
             let rowHtml = `<tr><td class="no-col">${siraNo}</td><td class="name-col">${p.ad}</td>`;
+            
             for(let i=1; i<=31; i++) {
-                let durum = (tumVeriler[ayKey]?.[pId]?.[i]) || "";
+                let durum = kayitlar[ayKey]?.[pId]?.[i] || "";
                 let cls = durum === 'V' ? 'present' : (durum === 'X' ? 'absent' : '');
                 rowHtml += `<td class="day-cell ${cls}" onclick="yoklamaDegistir('${pId}', ${i})">${durum==='V'?'✓':(durum==='X'?'X':'')}</td>`;
                 if(durum === 'V') tGun++;
             }
-            let mVal = (tumVeriler[ayKey]?.[pId]?.makina) || 0;
+
+            let mVal = kayitlar[ayKey]?.[pId]?.makina || 0;
             let tutar = (mVal * bFiyat).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
             
-            // GÜN sütunu summary-col class'ı sayesinde kalın yazdırılıyor
             rowHtml += `<td class="summary-col">${tGun}</td>`;
             rowHtml += `<td class="summary-col"><input type="number" step="0.1" value="${mVal}" onchange="makinaKaydet('${pId}', this.value)" style="width:100%; border:none; text-align:center; font-size:10px; font-weight:900; background:transparent;"></td>`;
             rowHtml += `<td class="money-col">₺${tutar}</td>`;
-            rowHtml += `<td class="no-print"><button onclick="pSil('${pId}')" style="background:none; color:red; font-weight:bold;">×</button></td></tr>`;
+            rowHtml += `<td class="no-print"><button onclick="pSil('${pId}', '${p.ad}')" style="background:none; color:red; font-weight:bold;">×</button></td></tr>`;
             body.innerHTML += rowHtml;
             siraNo++;
         });
@@ -240,14 +213,56 @@
 
     function yoklamaDegistir(pId, gun) {
         const ayKey = document.getElementById('aySecici').value;
-        let mev = (tumVeriler[ayKey]?.[pId]?.[gun]) || "";
-        db.ref(`puantaj/kayitlar/${ayKey}/${pId}/${gun}`).set(mev === "V" ? "X" : (mev === "X" ? "" : "V"));
+        const ref = db.ref(`puantaj/kayitlar/${ayKey}/${pId}/${gun}`);
+        ref.once('value', s => {
+            let mev = s.val() || "";
+            ref.set(mev === "V" ? "X" : (mev === "X" ? "" : "V"));
+        });
     }
-    function makinaKaydet(pId, val) { db.ref(`puantaj/kayitlar/${document.getElementById('aySecici').value}/${pId}/makina`).set(parseFloat(val) || 0); }
-    function fiyatKaydet(val) { db.ref(`puantaj/ayarlar/${document.getElementById('aySecici').value}/birimFiyat`).set(parseFloat(val) || 0); }
-    function notKaydet(val) { db.ref(`puantaj/ayarlar/${document.getElementById('aySecici').value}/notlar`).set(val); }
-    function pEkle() { const inp = document.getElementById('p_ad'); if(inp.value) { pRef.push({ ad: inp.value.toUpperCase() }); inp.value = ""; } }
-    function pSil(id) { if(confirm("Silinsin mi?")) pRef.child(id).remove(); }
+
+    function makinaKaydet(pId, val) { 
+        const ayKey = document.getElementById('aySecici').value;
+        db.ref(`puantaj/kayitlar/${ayKey}/${pId}/makina`).set(parseFloat(val) || 0); 
+    }
+
+    function fiyatKaydet(val) { 
+        const ayKey = document.getElementById('aySecici').value;
+        db.ref(`puantaj/ayarlar/${ayKey}/birimFiyat`).set(parseFloat(val) || 0); 
+    }
+
+    function notKaydet(val) { 
+        const ayKey = document.getElementById('aySecici').value;
+        db.ref(`puantaj/ayarlar/${ayKey}/notlar`).set(val); 
+    }
+
+    function pEkle() { 
+        const ayKey = document.getElementById('aySecici').value;
+        const inp = document.getElementById('p_ad'); 
+        if(inp.value) { 
+            // Personeli sadece bu aya özel listeye ekle
+            db.ref(`puantaj/aylik_personeller/${ayKey}`).push({ ad: inp.value.toUpperCase() }); 
+            inp.value = ""; 
+        } 
+    }
+
+    function pSil(id, ad) { 
+        const ayKey = document.getElementById('aySecici').value;
+        if(confirm(`${ad} isimli personel SADECE BU AYDAN silinsin mi?`)) {
+            // Önce bu ayın özel listesinde var mı diye kontrol et, yoksa genel listeden kopyala ve bu ayda sil
+            db.ref(`puantaj/aylik_personeller/${ayKey}`).once('value', snap => {
+                if(!snap.exists()) {
+                    // Eğer bu ay henüz özel bir liste oluşmamışsa, genel listeyi bu aya kopyalayıp öyle sil
+                    db.ref(`puantaj/personeller`).once('value', pSnap => {
+                        let liste = pSnap.val();
+                        delete liste[id];
+                        db.ref(`puantaj/aylik_personeller/${ayKey}`).set(liste);
+                    });
+                } else {
+                    db.ref(`puantaj/aylik_personeller/${ayKey}/${id}`).remove();
+                }
+            });
+        }
+    }
 </script>
 </body>
 </html>
